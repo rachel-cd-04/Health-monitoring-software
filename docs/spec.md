@@ -39,14 +39,14 @@ A *hazard* is an environmental condition; a *risk* is the concrete health effect
 
 | Body system | Indicator | Unit | NASA hazard | NASA risk (source id) |
 |---|---|---|---|---|
-| Cardiovascular | Heart rate | bpm | Gravity fields | Cardiovascular Adaptations (`nasa-risks-cardio`) |
-| | Blood pressure | mmHg | Gravity fields | Cardiovascular Adaptations (`nasa-risks-cardio`) |
-| Metabolism & infection | Blood sugar | mg/dL | Hostile closed environment | Inadequate Food and Nutrition (`nasa-risks-nutrition`) · *indicative link* |
-| | Body temperature | °C | Hostile closed environment | Altered Immune System Responses (`nasa-risks-immune`) · *indicative link* |
-| Sleep & mental health | Sleep duration | h | Isolation & confinement | Inadequate Sleep and Irregular Schedules (`nasa-risks-sleep`) |
-| | Mood | 1–5 | Isolation & confinement | Behavioral Changes and Psychiatric Disorders (`nasa-risks-behavioral`) |
-| | Fatigue | 1–5 | Isolation & confinement | Inadequate Sleep and Irregular Schedules (`nasa-risks-sleep`) |
-| Muscles & bones | Exercise | min | Gravity fields | Reduced Cardiorespiratory and Musculoskeletal Fitness (`nasa-risks-fitness`); Bone Changes (`nasa-risks-bone`) as indirect context |
+| Cardiovascular | Heart rate | bpm | Gravity fields | Cardiovascular Adaptations (`nasa-risk-cardio`) |
+| | Blood pressure | mmHg | Gravity fields | Cardiovascular Adaptations (`nasa-risk-cardio`) |
+| Metabolism & infection | Blood sugar | mg/dL | Hostile closed environment | Inadequate Food and Nutrition (`nasa-risk-nutrition`) · *indicative link* |
+| | Body temperature | °C | Hostile closed environment | Altered Immune System Responses (`nasa-risk-immune`) · *indicative link* |
+| Sleep & mental health | Sleep duration | h | Isolation & confinement | Inadequate Sleep and Irregular Schedules (`nasa-risk-sleep`) |
+| | Mood | 1–5 | Isolation & confinement | Behavioral Conditions and Psychiatric Disorders (`nasa-risk-behavioral`) |
+| | Fatigue | 1–5 | Isolation & confinement | Inadequate Sleep and Irregular Schedules (`nasa-risk-sleep`) |
+| Muscles & bones | Exercise | min | Gravity fields | Reduced Cardiorespiratory and Musculoskeletal Fitness (`nasa-risk-fitness`) |
 
 > Blood sugar and temperature come from the challenge statement; NASA has no dedicated page for them, so they are linked to the closest documented risk and labeled "indicative". Exercise relates to bone health only as indirect tracking — the app never claims to measure bone density.
 
@@ -61,7 +61,7 @@ A *hazard* is an environmental condition; a *risk* is the concrete health effect
 | F6 | Dynamic trend charts vs. baseline | P0 |
 | F7 | Mission simulator (scripted story) | P0 |
 | F8 | Routine & measurement reminders | P1 |
-| F9 | AI assistant (Mistral + RAG) | P1 |
+| F9 | AI assistant (Mistral agentic loop) | P1 |
 | F10 | Crew view (commander) | P1 |
 | F11 | Environment selector (space station, spacecraft in transit only) | P1 |
 | F12 | Gamification | Removed |
@@ -89,7 +89,7 @@ Screen-level detail: see `features.md`.
 
 **HM-04 · Alerts (F4)**
 - [ ] Each alert shows: level, explanation, action checklist, who should act (self / crew / ground + comms delay), rule ID + version and source link.
-- [ ] Rules are deterministic, versioned and tested.
+- [ ] Rules are deterministic and versioned.
 
 **HM-05 · Emergency (F5)**
 - [ ] Emergency button reachable from every screen in one tap.
@@ -110,10 +110,9 @@ Screen-level detail: see `features.md`.
 
 **HM-08 · Routine (F8)** — Daily list of due measurements with overdue highlighting.
 **HM-09 · Assistant (F9)**
-- [ ] Answers only with backend tools + retrieved corpus chunks; every answer lists clickable sources.
+- [ ] Answers only with backend tools and Mistral's bounded agentic loop; every answer lists clickable sources.
 - [ ] Never diagnoses; for symptoms it points to Emergency mode and mission procedure.
-- [ ] Out-of-corpus question → "I don't have enough evidence".
-- [ ] If Mistral is unreachable, falls back to keyword search over the corpus and shows the matching passages with sources; the rest of the app is unaffected.
+- [ ] If Mistral is unreachable, the assistant reports that it is unavailable; the rest of the app is unaffected.
 - [ ] Limit stated in README: a hosted LLM is not autonomous on a real mission.
 
 **HM-13 · Radiation context (F13, stretch)**
@@ -134,17 +133,17 @@ Screen-level detail: see `features.md`.
 ## 6. Alert rules (illustrative, to be validated against sources)
 | ID | Condition | Level | Who acts | Source |
 |---|---|---|---|---|
-| S-01 | Sleep < 6 h for 3 consecutive nights | Amber | Self | `nasa-risks-sleep` |
-| M-01 | Mood ≤ 2 for 3 days | Amber | Self + crew | `nasa-risks-behavioral` |
-| C-01 | Resting HR > baseline + 15 bpm for 3 days | Amber | Self | `nasa-risks-cardio` |
-| C-02 | Systolic BP ≥ 140 or ≤ 90 mmHg | Red | Crew + ground | `nasa-risks-cardio` |
-| G-01 | Blood sugar < 70 or > 180 mg/dL | Red | Self + crew | `nasa-risks-nutrition` |
-| T-01 | Body temperature ≥ 38.0 °C | Amber | Self + crew | `nasa-risks-immune` |
-| E-01 | Exercise < 60 min/day for 5 days | Amber | Self | `nasa-risks-fitness` |
-| X-01 | Emergency triggered | Red | Crew + ground | `mission-medical-procedure` |
+| S-01 | Sleep < 6 h for 3 consecutive nights | Amber | Self | `nasa-risk-sleep` |
+| M-01 | Mood ≤ 2 for 3 days | Amber | Self + crew | `nasa-risk-behavioral` |
+| C-01 | Resting HR > baseline + 15 bpm for 3 days | Amber | Self | `nasa-risk-cardio` |
+| C-02 | Systolic BP ≥ 140 or ≤ 90 mmHg | Red | Crew + ground | `nasa-risk-cardio` |
+| G-01 | Blood sugar < 70 or > 180 mg/dL | Red | Self + crew | `nasa-risk-nutrition` |
+| T-01 | Body temperature ≥ 38.0 °C | Amber | Self + crew | `nasa-risk-immune` |
+| E-01 | Exercise < 60 min/day for 5 days | Amber | Self | `nasa-risk-fitness` |
+| X-01 | Emergency triggered | Red | Crew + ground | `nasa-hazards` |
 
 > **Illustrative** thresholds for the demo, labeled as such in the UI.
-> `backend/src/rules/rules.yaml` is the **source of truth**; this table is a human summary. Every rule has at least one test derived from the YAML.
+> `backend/src/rules/rules.yaml` is the **source of truth**; this table is a human summary.
 > A single reading is not a diagnosis: point-in-time rules (C-02, G-01) tell the user to repeat the measurement before acting.
 
 ## 7. Constraints
@@ -154,7 +153,7 @@ See `constitution.md`. 100 % synthetic data. At least one NASA resource from the
 | Resource | Where it shows up |
 |---|---|
 | NASA — 5 Hazards | Hazard column of the indicator table; body map explanations |
-| NASA — Risks | Risk context in alerts and guides; rule sources; RAG corpus |
+| NASA — Risks | Risk context in alerts and guides; rule sources |
 | NASA — Ongoing HRP Research | Data-model design (Standard Measures, ARCHeR, CIPHER, Tempus Pro as *design references only*) |
 | CSA — Monitoring Radiation | Radiation context module (F13, stretch). If F13 is not built, cite it only in the pitch as future work, not as "used" |
 | CSA — Why Science Experiments | Pitch and report: justification and benefits on Earth |
@@ -162,7 +161,7 @@ See `constitution.md`. 100 % synthetic data. At least one NASA resource from the
 **Never claim** an integration with CANS, ARCHeR, Tempus Pro or any NASA/CSA dataset. Consulting a scientific page does not make synthetic data NASA data.
 
 ## 8. Platform constraints
-- Backend is Node + Express; request/response contracts are described in `docs/specs/api-contract.md` and validated in the backend with zod schemas (`backend/src/schemas/`).
+- Backend is Node + Express with Prisma ORM 7; request/response contracts are described in `docs/specs/api-contract.md` and validated at the API boundary.
 - Supabase is only accessed from the backend with the service key; RLS is on with no public policies.
 - Emergency tree and guides are static JSON bundled with the frontend. There is no offline mode: the app needs its backend (except in the no-backend demo, which stores data in the browser).
 - Auth: PIN → JWT (`Authorization: Bearer`), signed with `JWT_SECRET` (backend `.env` only). Libraries: `bcryptjs`, `jsonwebtoken`. See "Access, privacy and roles".

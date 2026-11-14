@@ -1,9 +1,10 @@
 # API contract
 
-Source of truth for request/response shapes. The zod schemas in `backend/src/schemas/` implement this document and the frontend API client follows it; change this file first, then the schemas, then the code.
+Source of truth for request/response shapes. The backend validates these shapes and persists data through Prisma ORM 7; the frontend API client follows this document.
 
 **Conventions**
 - JSON over HTTP, base path `/api`. Timestamps ISO 8601 UTC.
+- `GET /health` is an operational endpoint outside the `/api` base path.
 - Errors: `{ "error": { "code": string, "message": string, "details"?: object } }` with 400 (validation), 404, 500.
 - `source` is always `manual | simulated | sensor`.
 - Auth: `POST /auth/login` (PIN) returns a JWT sent as `Authorization: Bearer <token>`. Three access levels:
@@ -33,6 +34,10 @@ Body: `{ astronaut_id, pin }` (pin = 4 digits)
 → 200 `{ token, astronaut: { id, name, role, avatar }, expires_at }`
 Errors: 401 `WRONG_PIN` (`details.attempts_left`), 429 `PIN_LOCKED` (`details.retry_after_s`; 3 failures → 30 s).
 
+### `GET /health` (public, operational)
+→ `{ status: "ok", database: "up", timestamp }`
+Returns 503 with the same shape and `status: "degraded"` when the database is unavailable.
+
 ### `GET /astronauts` (public)
 → `[{ id, name, role, avatar, mission_day }]`
 
@@ -53,14 +58,22 @@ Body: `{ astronaut_id, day, sleep_hours?, mood?, fatigue?, source }`
 ### `GET /astronauts/:id/routine`
 → `[{ item, due_at, done, overdue }]`
 
+### `PATCH /astronauts/:id/routine/:item_id`
+Body: `{ done: boolean }`
+→ 200 `{ item, due_at, done, overdue }`
+
 ### `GET /crew/overview` (public, general level)
 → `{ mission_day, environment, comms_delay_s, crew: [{ id, name, role, avatar, overall: green|amber|red|grey, active_alert_count }] }` sorted by attention needed. **Never** returns values, body systems or mood/sleep.
 
 ### `GET /crew/alerts` (commander)
 → `[{ astronaut_id, name, level, title, ts }]` for the *other* astronauts' active alerts. No values, no mental-health data.
 
+### `PATCH /alerts/:id/acknowledge`
+Acknowledges one of the authenticated astronaut's active alerts.
+→ 200 `{ alert }`
+
 ### `POST /emergency` (public)
-Body: `{ id?: uuid, patient_id, reporter_id?, scenario, started_at? }` — `id` may be client-generated. `reporter_id` optional (no profile active). → 201 `{ event }`. Also raises rule X-01.
+Body: `{ id?: uuid, patient_id?, reporter_id?, scenario, started_at? }` — `id` may be client-generated and `patient_id` may be omitted when the patient is not identified. `reporter_id` optional (no profile active). → 201 `{ event }`. Also raises rule X-01.
 
 ### `GET /emergency/:id/context` (public, emergency only)
 → `{ patient: { id, name }, mission_day, last_vitals: [{indicator,value,unit,ts,source}], active_alerts: [{level,title}] }` — shown inside the emergency flow so a helper can read it out to ground; safety over privacy.
@@ -71,6 +84,10 @@ Body: `{ id: uuid, step_id, answer?, ts, vital_indicator?, vital_value? }`. Idem
 ### `GET /emergency/:id/summary`
 → `{ event, timeline: [steps], vitals: [...], text }` — plain-text summary for crew/ground. Labeled illustrative.
 
+### `PATCH /emergency/:id/close` (public)
+Body: `{ ended_at?: timestamp }`
+→ 200 `{ event }`
+
 ### `GET /radiation/events` (stretch, F13)
 → `[{ ts, dose_msv, dose_rate_usv_h, radiation_type, location, instrument, event_type, source }]`
 
@@ -79,8 +96,8 @@ Body: `{ id: uuid, step_id, answer?, ts, vital_indicator?, vital_value? }`. Idem
 
 ### `POST /assistant/chat`
 Body: `{ astronaut_id, message }`
-→ `{ answer, sources: [{id,title,url}], data_used: string[], caution: string, mode: "llm" | "fallback" }`
-`mode: "fallback"` when Mistral is unreachable: `answer` is built from matching corpus passages. Out-of-corpus → `answer` = "I don't have enough evidence…" with empty `sources`.
+→ `{ answer, sources: [{id,title,url}], data_used: string[], caution: string, mode: "agentic" | "unavailable" }`
+The backend runs a bounded agentic loop with Mistral and read-only health/source tools. If Mistral is unreachable, return `503 AI_UNAVAILABLE`; logging, alerts, status and emergency endpoints continue to work.
 
 ## Alert shape
 ```

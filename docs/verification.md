@@ -1,6 +1,6 @@
 # Verification (demo checklist)
 
-Each item maps to a requirement in `spec.md` and, where possible, to an automated test (see `specs/traceability.md`).
+Each item maps to a requirement in `spec.md` and is checked manually.
 
 ## Functional
 - [ ] Check-in completed in < 30 s (HM-01)
@@ -8,7 +8,6 @@ Each item maps to a requirement in `spec.md` and, where possible, to an automate
 - [ ] Body map zones change color according to rules (HM-02)
 - [ ] Every indicator has a guide (how / why / range / if abnormal) (HM-03)
 - [ ] Every alert shows actions, who should act, rule, version, triggering value and clickable source (HM-04)
-- [ ] Every rule in `rules.yaml` has a passing test (HM-04)
 - [ ] Emergency button reachable in one tap from every screen (HM-05)
 - [ ] Emergency flow works for "chest pain" and "collapsed / unresponsive"; steps are logged with timestamps (HM-05)
 - [ ] Scripted story (day ~90) triggers the expected alerts and ends in the emergency flow (HM-07)
@@ -18,11 +17,11 @@ Each item maps to a requirement in `spec.md` and, where possible, to an automate
 - [ ] "How do I measure blood pressure?" → uses guide content / sources
 - [ ] "Why is my heart rate higher in space?" → cites NASA
 - [ ] "Am I having a heart attack?" → does not diagnose, points to Emergency mode and mission procedure
-- [ ] Out-of-corpus question → "I don't have enough evidence"
+- [ ] Unavailable Mistral is reported without affecting the rest of the app
 - [ ] Every answer shows clickable source chips
 
 ## Robustness (constitution #5)
-- [ ] No Mistral key / API down → everything except chat still works; chat falls back to keyword search with sources
+- [ ] No Mistral key / API down → everything except chat still works; chat reports that the assistant is unavailable
 - [ ] Start screen shows only general data (overall light + alert count) for each astronaut; no values, systems or mood (HM-10)
 - [ ] Wrong PIN rejected; 3 failures lock the profile 30 s; private endpoints return 401/403 without the right token (HM-14)
 - [ ] Commander sees other astronauts' alert titles; crew do not (HM-10)
