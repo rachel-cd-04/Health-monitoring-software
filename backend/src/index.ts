@@ -21,7 +21,7 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));
 app.get('/docs/openapi.json', (_req, res) => res.json(openapi));
-app.use('/docs', express.static(swaggerUiDistPath));
+app.use('/docs', express.static(swaggerUiDistPath, { index: false }));
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapi));
 
 registerRoutes(app);
