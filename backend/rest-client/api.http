@@ -1,0 +1,223 @@
+@baseUrl = http://localhost:3000
+@api = {{baseUrl}}/api
+@astronautId = 1
+@astronautPin = 1111
+@patientId = 2
+@emergencyId = 2f2c6f7a-6c8c-4c1c-9a9d-6a1e2bb4d101
+@stepId = 7f4e3b2a-0d1c-4e8f-9a7b-5c6d2e1f9080
+
+### Health
+# @name health
+GET {{baseUrl}}/health
+
+
+### Public crew list
+# @name astronauts
+GET {{api}}/astronauts
+
+
+### Public sources
+# @name sources
+GET {{api}}/sources
+
+
+### Privacy-safe crew overview
+# @name crewOverview
+GET {{api}}/crew/overview
+
+
+### Login as commander
+# @name commanderLogin
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "astronaut_id": {{astronautId}},
+  "pin": "{{astronautPin}}"
+}
+
+###
+
+@commanderToken = {{commanderLogin.response.body.$.token}}
+
+### Get crew alerts
+GET {{api}}/crew/alerts
+Authorization: Bearer {{commanderToken}}
+### Login with an invalid PIN
+# @name invalidLogin
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "astronaut_id": {{astronautId}},
+  "pin": "9999"
+}
+
+
+### Private status
+# @name status
+GET {{api}}/astronauts/{{astronautId}}/status
+Authorization: Bearer {{commanderToken}}
+
+
+### Private history
+# @name history
+GET {{api}}/astronauts/{{astronautId}}/history?indicator=heart_rate&days=7
+Authorization: Bearer {{commanderToken}}
+
+
+### Routine list
+# @name routine
+GET {{api}}/astronauts/{{astronautId}}/routine
+Authorization: Bearer {{commanderToken}}
+
+
+@routineId = {{routine.response.body.$[0].id}}
+
+### Mark routine item complete
+# @name routineUpdate
+PATCH {{api}}/astronauts/{{astronautId}}/routine/{{routineId}}
+Authorization: Bearer {{commanderToken}}
+Content-Type: application/json
+
+{
+  "done": true
+}
+
+
+### Create a check-in
+# @name checkin
+POST {{api}}/checkins
+Authorization: Bearer {{commanderToken}}
+Content-Type: application/json
+
+{
+  "astronaut_id": {{astronautId}},
+  "day": "2026-11-14",
+  "sleep_hours": 7,
+  "mood": 4,
+  "fatigue": 2,
+  "source": "manual"
+}
+
+
+### Create a normal measurement
+# @name measurement
+POST {{api}}/measurements
+Authorization: Bearer {{commanderToken}}
+Content-Type: application/json
+
+{
+  "astronaut_id": {{astronautId}},
+  "indicator": "heart_rate",
+  "value": 72,
+  "unit": "bpm",
+  "source": "manual",
+  "mission_phase": "in_flight"
+}
+
+
+### Create an out-of-range measurement
+# @name invalidMeasurement
+POST {{api}}/measurements
+Authorization: Bearer {{commanderToken}}
+Content-Type: application/json
+
+{
+  "astronaut_id": {{astronautId}},
+  "indicator": "heart_rate",
+  "value": 999,
+  "unit": "bpm",
+  "source": "manual"
+}
+
+
+### Create a high blood-pressure measurement to exercise C-02
+# @name highBloodPressure
+POST {{api}}/measurements
+Authorization: Bearer {{commanderToken}}
+Content-Type: application/json
+
+{
+  "astronaut_id": {{astronautId}},
+  "indicator": "bp_systolic",
+  "value": 180,
+  "unit": "mmHg",
+  "source": "manual",
+  "mission_phase": "in_flight"
+}
+
+###
+@alertId = {{highBloodPressure.response.body.$.alerts[0].id}}
+
+### Acknowledge the generated alert
+# @name acknowledgeAlert
+PATCH {{api}}/alerts/{{alertId}}/acknowledge
+Authorization: Bearer {{commanderToken}}
+
+
+### Commander-only alerts
+# @name commanderAlerts
+GET {{api}}/crew/alerts
+Authorization: Bearer {{commanderToken}}
+
+
+### Open a public emergency
+# @name emergency
+POST {{api}}/emergency
+Content-Type: application/json
+
+{
+  "id": "{{emergencyId}}",
+  "patient_id": {{patientId}},
+  "reporter_id": {{astronautId}},
+  "scenario": "chest_pain"
+}
+
+
+### Emergency context
+# @name emergencyContext
+GET {{api}}/emergency/{{emergencyId}}/context
+
+
+### Add an emergency step
+# @name emergencyStep
+POST {{api}}/emergency/{{emergencyId}}/steps
+Content-Type: application/json
+
+{
+  "id": "{{stepId}}",
+  "step_id": "check_breathing",
+  "answer": "Breathing normally"
+}
+
+
+### Emergency summary
+# @name emergencySummary
+GET {{api}}/emergency/{{emergencyId}}/summary
+
+
+### Close emergency
+# @name closeEmergency
+PATCH {{api}}/emergency/{{emergencyId}}/close
+Content-Type: application/json
+
+{}
+
+
+### Simulated radiation events
+# @name radiation
+GET {{api}}/radiation/events
+
+
+### AI assistant
+# Requires MISTRAL_API_KEY in backend/.env; intentionally not executed by the default smoke flow.
+# @name assistant
+# POST {{api}}/assistant/chat
+# Authorization: Bearer {{commanderToken}}
+# Content-Type: application/json
+#
+# {
+#   "astronaut_id": {{astronautId}},
+#   "message": "Summarize my latest heart-rate trend."
+# }

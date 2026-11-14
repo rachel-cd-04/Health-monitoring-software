@@ -11,7 +11,7 @@
   actions:
     - "Check cabin lighting and your sleep schedule."
     - "If it persists, report at the next ground contact."
-  source_id: nasa-risks-sleep
+  source_id: nasa-risk-sleep
 - id: M-01
   version: 1
   indicator: mood
@@ -23,7 +23,7 @@
   actions:
     - "Talk to a crewmate or schedule a call with family."
     - "Review your workload and rest periods."
-  source_id: nasa-risks-behavioral
+  source_id: nasa-risk-behavioral
 - id: C-01
   version: 1
   indicator: heart_rate
@@ -36,7 +36,7 @@
     - "Measure again at rest, seated, after 5 minutes."
     - "Check hydration, caffeine and sleep."
     - "If it persists, report at the next ground contact."
-  source_id: nasa-risks-cardio
+  source_id: nasa-risk-cardio
 - id: C-02
   version: 1
   indicator: bp_systolic
@@ -49,7 +49,7 @@
     - "Rest for 5 minutes and measure again before acting on this value."
     - "Inform a crewmate."
     - "If still out of range, contact the flight surgeon."
-  source_id: nasa-risks-cardio
+  source_id: nasa-risk-cardio
 - id: G-01
   version: 1
   indicator: blood_sugar
@@ -62,7 +62,7 @@
     - "Repeat the measurement to confirm."
     - "Check when you last ate and follow your onboard nutrition plan."
     - "Inform a crewmate."
-  source_id: nasa-risks-nutrition
+  source_id: nasa-risk-nutrition
 - id: T-01
   version: 1
   indicator: temperature
@@ -74,7 +74,7 @@
   actions:
     - "Rest, hydrate and measure again in 30 minutes."
     - "Inform a crewmate if it stays high or you feel unwell."
-  source_id: nasa-risks-immune
+  source_id: nasa-risk-immune
 - id: E-01
   version: 1
   indicator: exercise_min
@@ -86,7 +86,7 @@
   actions:
     - "Schedule your exercise session in today's routine."
     - "Exercise is a key countermeasure for muscle and bone loss in microgravity."
-  source_id: nasa-risks-fitness
+  source_id: nasa-risk-fitness
 - id: X-01
   version: 1
   indicator: emergency
@@ -98,5 +98,5 @@
   actions:
     - "Follow your mission medical procedures."
     - "Follow the on-screen guide step by step."
-  source_id: mission-medical-procedure
+  source_id: nasa-hazards
 
