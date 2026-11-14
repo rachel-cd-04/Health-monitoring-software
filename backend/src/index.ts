@@ -9,7 +9,7 @@ import { syncRules } from './controllers/common.js';
 import { registerRoutes } from './routes/index.js';
 import { sendError } from './utils/http.js';
 
-const app = express();
+export const app = express();
 const port = Number(process.env.PORT ?? 3000);
 
 app.use(helmet());
@@ -35,9 +35,17 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   sendError(res, 500, 'INTERNAL_ERROR', 'An unexpected backend error occurred.');
 });
 
-app.listen(port, () => {
+async function start() {
   void syncRules().catch((err) => console.error('Rule synchronization failed:', err));
-  console.log(`Astro Health Monitor backend listening on port ${port}`);
-  console.log(`Swagger UI available at http://localhost:${port}/docs/`);
-  console.log(`OpenAPI JSON available at http://localhost:${port}/docs/openapi.json`);
-});
+  app.listen(port, () => {
+    console.log(`Astro Health Monitor backend listening on port ${port}`);
+    console.log(`Swagger UI available at http://localhost:${port}/docs/`);
+    console.log(`OpenAPI JSON available at http://localhost:${port}/docs/openapi.json`);
+  });
+}
+
+if (process.env.VERCEL !== '1') {
+  void start();
+} else {
+  void syncRules().catch((err) => console.error('Rule synchronization failed:', err));
+}
