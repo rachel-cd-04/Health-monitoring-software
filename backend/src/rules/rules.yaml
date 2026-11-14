@@ -1,0 +1,102 @@
+﻿# ILLUSTRATIVE thresholds for the demo. See docs/spec.md Â§6.
+# Source of truth for the rule engine; synced to the `rules` table at startup.
+- id: S-01
+  version: 1
+  indicator: sleep_hours
+  body_system: sleep_mental
+  condition: "value < 6 for 3 consecutive days"
+  level: amber
+  who_acts: [self]
+  message: "You've slept less than 6 hours for three nights in a row."
+  actions:
+    - "Check cabin lighting and your sleep schedule."
+    - "If it persists, report at the next ground contact."
+  source_id: nasa-risks-sleep
+- id: M-01
+  version: 1
+  indicator: mood
+  body_system: sleep_mental
+  condition: "value <= 2 for 3 consecutive days"
+  level: amber
+  who_acts: [self, crew]
+  message: "Your mood has been low for three days."
+  actions:
+    - "Talk to a crewmate or schedule a call with family."
+    - "Review your workload and rest periods."
+  source_id: nasa-risks-behavioral
+- id: C-01
+  version: 1
+  indicator: heart_rate
+  body_system: cardiovascular
+  condition: "value > baseline + 15 for 3 consecutive days"
+  level: amber
+  who_acts: [self]
+  message: "Your resting heart rate has been above your usual for three days."
+  actions:
+    - "Measure again at rest, seated, after 5 minutes."
+    - "Check hydration, caffeine and sleep."
+    - "If it persists, report at the next ground contact."
+  source_id: nasa-risks-cardio
+- id: C-02
+  version: 1
+  indicator: bp_systolic
+  body_system: cardiovascular
+  condition: "value >= 140 or value <= 90"
+  level: red
+  who_acts: [crew, ground]
+  message: "Systolic blood pressure is out of range."
+  actions:
+    - "Rest for 5 minutes and measure again before acting on this value."
+    - "Inform a crewmate."
+    - "If still out of range, contact the flight surgeon."
+  source_id: nasa-risks-cardio
+- id: G-01
+  version: 1
+  indicator: blood_sugar
+  body_system: metabolism_infection
+  condition: "value < 70 or value > 180"
+  level: red
+  who_acts: [self, crew]
+  message: "Blood sugar is out of range."
+  actions:
+    - "Repeat the measurement to confirm."
+    - "Check when you last ate and follow your onboard nutrition plan."
+    - "Inform a crewmate."
+  source_id: nasa-risks-nutrition
+- id: T-01
+  version: 1
+  indicator: temperature
+  body_system: metabolism_infection
+  condition: "value >= 38.0"
+  level: amber
+  who_acts: [self, crew]
+  message: "Body temperature is elevated."
+  actions:
+    - "Rest, hydrate and measure again in 30 minutes."
+    - "Inform a crewmate if it stays high or you feel unwell."
+  source_id: nasa-risks-immune
+- id: E-01
+  version: 1
+  indicator: exercise_min
+  body_system: muscles_bones
+  condition: "value < 60 for 5 consecutive days"
+  level: amber
+  who_acts: [self]
+  message: "Exercise has been below target for five days."
+  actions:
+    - "Schedule your exercise session in today's routine."
+    - "Exercise is a key countermeasure for muscle and bone loss in microgravity."
+  source_id: nasa-risks-fitness
+- id: X-01
+  version: 1
+  indicator: emergency
+  body_system: all
+  condition: "emergency triggered"
+  level: red
+  who_acts: [crew, ground]
+  message: "Emergency mode was triggered."
+  actions:
+    - "Follow your mission medical procedures."
+    - "Follow the on-screen guide step by step."
+  source_id: mission-medical-procedure
+
