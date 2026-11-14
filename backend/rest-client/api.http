@@ -1,4 +1,4 @@
-@baseUrl = http://localhost:3000
+@baseUrl = https://backend-sandy-pi-25.vercel.app
 @api = {{baseUrl}}/api
 @astronautId = 1
 @astronautPin = 1111

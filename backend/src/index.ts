@@ -15,6 +15,7 @@ const require = createRequire(import.meta.url);
 const swaggerUiDistPath = dirname(require.resolve('swagger-ui-dist/package.json'));
 
 export const app = express();
+app.set('trust proxy', 1);
 const port = Number(process.env.PORT ?? 3000);
 
 app.use(helmet());
