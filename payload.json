@@ -1,0 +1,1 @@
+{"messages":[{"role":"user","content":[{"type":"text","text":"What is in this image?"},{"type":"image_url","image_url":{"url":"https://assets.ngc.nvidia.com/products/api-catalog/phi-3-5-vision/example1b.jpg"}}]}],"model":"minimaxai/minimax-m3.1-flash","max_tokens":16384,"seed":0,"stream":true,"temperature":1,"top_p":0.95}

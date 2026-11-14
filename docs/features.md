@@ -52,12 +52,15 @@ Example indicators named in the statement: **blood pressure, heart rate, blood s
    │   │   │   └──► [Alert detail → actions → who to contact]
    │   │   └──────► [Check-in / Log measurement]
    │   └──────────► [Routine & reminders]
-   ├──────────────► [AI Assistant]
+   ├──────────────► ~~[AI Assistant]~~  (deprecated by MOD-01: now global, see below)
    ├──────────────► [Crew view] (commander)
-   └── 🔴 [EMERGENCY] — always visible, one tap
+   ├── 🔴 [EMERGENCY] — always visible, one tap
+   └── 💬 [AI ASSISTANT] — always visible on every screen, incl. profile picker (MOD-01)
 ```
 
-Suggested navigation: bottom/side bar **Body · Log · Routine · Trends · Assistant · Crew**, plus a permanent red **Emergency** button.
+~~Suggested navigation: bottom/side bar **Body · Log · Routine · Trends · Assistant · Crew**, plus a permanent red **Emergency** button.~~ _(deprecated by MOD-01)_
+
+**MOD-01:** Suggested navigation: bottom/side bar **Body · Log · Routine · Trends · Crew**, plus a permanent red **Emergency** button and a permanent **Assistant** button that opens the chat as a drawer/overlay on any screen, including the profile picker before any PIN is entered.
 
 ---
 
@@ -230,6 +233,13 @@ Not a user screen, but it drives the demo:
 **States:** empty with suggestions · thinking · answer · AI unavailable (rest of app keeps working)
 
 **Rule:** the assistant explains and summarizes; it never diagnoses or overrides the rule engine / emergency protocol.
+
+**MOD-01 · Global assistant with per-astronaut privacy**
+- Opened from a permanent button on every screen (drawer/overlay), including the profile picker.
+- Header chip shows the scope: **"General · public data only"** (no PIN) or **"Private · <name>"** (logged in).
+- Suggested questions depend on scope. No PIN: "Who has active alerts?", "Why does sleep matter in space?". With a PIN, add personal ones such as "How did I sleep this week?".
+- Asking for private data without a PIN, or for another astronaut's private data → "That information is private…", plus a button that opens the PIN keypad (own profile only).
+- Switching or leaving a profile clears the chat history, so private answers never stay on screen for the next user.
 
 ---
 

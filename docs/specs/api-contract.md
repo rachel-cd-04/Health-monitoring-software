@@ -9,6 +9,7 @@ Source of truth for request/response shapes. The backend validates these shapes 
 - `source` is always `manual | simulated | sensor`.
 - Auth: `POST /auth/login` (PIN) returns a JWT sent as `Authorization: Bearer <token>`. Three access levels:
   - **public:** `/auth/login`, `/astronauts`, `/crew/overview`, `/sources`, all `/emergency*`.
+  - **public with optional auth (MOD-01):** `/assistant/chat`. The token is optional; if present it must be valid (else 401 `UNAUTHENTICATED`) and it unlocks that astronaut's own private data.
   - **private:** everything else; the token's astronaut must match `astronaut_id` / `:id` → else 403 `FORBIDDEN`. No/invalid token → 401 `UNAUTHENTICATED`.
   - **commander:** `/crew/alerts` (role `commander`, else 403).
 - Emergency endpoints are public on purpose and rate-limited. A 4-digit PIN is not real security (see spec "Access, privacy and roles").
@@ -94,10 +95,19 @@ Body: `{ ended_at?: timestamp }`
 ### `GET /sources`
 → `[{ id, agency, title, url, doc_type, accessed_on }]`
 
-### `POST /assistant/chat`
-Body: `{ astronaut_id, message }`
-→ `{ answer, sources: [{id,title,url}], data_used: string[], caution: string, mode: "agentic" | "unavailable" }`
-The backend runs a bounded agentic loop with Mistral and read-only health/source tools. If Mistral is unreachable, return `503 AI_UNAVAILABLE`; logging, alerts, status and emergency endpoints continue to work.
+### `POST /assistant/chat` (public, optional auth — MOD-01)
+~~Body: `{ astronaut_id, message }`~~ _(deprecated by MOD-01: private endpoint with `astronaut_id` in the body)_
+~~→ `{ answer, sources: [{id,title,url}], data_used: string[], caution: string, mode: "agentic" | "unavailable" }`~~ _(deprecated by MOD-01)_
+The backend runs a bounded agentic loop with ~~Mistral~~ the LLM provider (MOD-02: OpenAI SDK → NVIDIA NIM) and read-only health/source tools. If ~~Mistral~~ the LLM provider is unreachable, return `503 AI_UNAVAILABLE`; logging, alerts, status and emergency endpoints continue to work.
+
+**MOD-01:**
+Body: `{ message }` (1–2000 chars). There is no `astronaut_id`: the session astronaut comes from the optional Bearer token. A body with extra fields (e.g. `astronaut_id`) → 400 `VALIDATION_ERROR`.
+→ 200 `{ answer, sources: [{id,title,url}], data_used: string[], caution: string, mode: "agentic", scope: "public" | "private" }`
+- `scope: "public"` (no token): source registry + every astronaut's active alerts (`level`, `title`, `ts`). No values, trends, check-ins, mood or sleep.
+- `scope: "private"` (valid token): the same plus the token astronaut's own private data. Other astronauts stay at public scope.
+- `data_used` lists the tools that were run successfully.
+- (MOD-03) The loop waits ≥ 1 s between LLM requests, so a question that uses tools takes a few seconds; clients should show a "thinking" state and use a generous timeout (≥ 60 s).
+- Errors: 401 `UNAUTHENTICATED` (invalid/expired token), 429 (rate limit, 20 requests/min), 503 `AI_UNAVAILABLE` (no ~~`MISTRAL_API_KEY`~~ `LLM_API_KEY` (MOD-02), or the provider is unreachable after 2 automatic retries).
 
 ## Alert shape
 ```

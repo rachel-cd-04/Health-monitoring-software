@@ -33,8 +33,10 @@ Working order per feature (SDD): contract in `docs/specs/api-contract.md` → im
 ## Sunday morning — P0 polish + P1
 - [ ] T20 · I1 · Trend charts with baseline and markers (HM-06)
 - [ ] T21 · I2 · Routine/reminders endpoint + I1 routine list (HM-08)
-- [ ] T22 · I3 · Mistral adapter with bounded agentic loop and read-only health/source tools (HM-09)
-- [ ] T23 · I1 · Chat panel with source chips and "AI unavailable" state
+- [ ] T22 · I3 · ~~Mistral~~ LLM adapter (MOD-02: OpenAI SDK → NVIDIA NIM) with bounded agentic loop and read-only health/source tools (HM-09)
+- [ ] ~~T23 · I1 · Chat panel with source chips and "AI unavailable" state~~ _(deprecated by MOD-01, replaced by T23b)_
+- [ ] T22b · I2/I3 · (MOD-01) `optionalAuth` on `/assistant/chat`, session-scoped tools (`get_crew_active_alerts`, `get_my_health_summary`, `get_my_indicator_history`; no `astronaut_id` argument) (HM-09)
+- [ ] T23b · I1 · (MOD-01) Global chat drawer in the layout (every screen, incl. profile picker) with source chips, "AI unavailable" state, scope chip and history cleared on profile switch (HM-09)
 - [ ] T24 · I1 · Environment selector (station / transit only) + crew view (HM-10, HM-11)
 - [ ] T25 · D · Video script (author's "halfway to Mars" story) and slides; include the CSA "Why science experiments" benefits-on-Earth closing
 

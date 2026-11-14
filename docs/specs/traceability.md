@@ -12,7 +12,7 @@ Requirement → tasks → manual check.
 | HM-06 | Trends | T13, T20 | Chart with baseline + markers |
 | HM-07 | Simulator | T10 | Story ends in emergency |
 | HM-08 | Routine | T21 | Overdue highlighted |
-| HM-09 | Assistant | T22, T23 | Verification "Assistant" list |
+| HM-09 | Assistant | T22, ~~T23~~ → T22b, T23b (MOD-01) | Verification "Assistant" list (incl. MOD-01 privacy checks) |
 | HM-10 | Crew view (general level + commander alerts) | T04b, T04c, T24 | Sorted by attention; no private data leaks |
 | HM-11 | Environment (station / transit) | T24 | Header and delay change |
 | HM-13 | Radiation (stretch) | T41 | Dose ≠ risk; "simulated" |

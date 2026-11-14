@@ -13,10 +13,10 @@ Health self-monitoring dashboard for astronauts on long-duration missions: track
 - Deterministic, traceable alerts with actions and escalation (self / crew / ground)
 - Emergency mode: step-by-step guidance (e.g. chest pain, collapse)
 - Trend charts vs. each astronaut's personal baseline
-- AI assistant (Mistral agentic loop) that explains and cites NASA/CSA sources, never diagnoses
+- AI assistant (~~Mistral~~ LLM agentic loop via NVIDIA NIM — MOD-02) that explains and cites NASA/CSA sources, never diagnoses. Available on every screen: without a PIN it only sees public data (each astronaut's active alerts); with a PIN it also sees your own private data, never anyone else's (MOD-01)
 
 ## Stack
-Frontend: React + Vite + TypeScript · Backend: Node.js + Express + TypeScript · ORM: Prisma 7 · DB: Supabase PostgreSQL · LLM: Mistral API
+Frontend: React + Vite + TypeScript · Backend: Node.js + Express + TypeScript · ORM: Prisma 7 · DB: Supabase PostgreSQL · LLM: ~~Mistral API~~ OpenAI SDK → NVIDIA NIM, ~~`deepseek-ai/deepseek-v4.1-flash` (MOD-02)~~ `nvidia/nemotron-3.5-super-vl-120b-a12b` (MOD-03)
 
 ## Run locally
 ```bash
@@ -53,7 +53,7 @@ Only resources demonstrable in the app are listed (see `docs/spec.md` §7).
 > No NASA/CSA dataset or instrument is integrated. All data is synthetic; CANS, ARCHeR and Tempus Pro are not used, only studied as design references.
 
 ## Known limits
-- Mistral is a hosted API, so the assistant is **not autonomous** on a real mission; if it is unreachable, the assistant reports that it is unavailable while the rest of the app continues working.
+- ~~Mistral~~ NVIDIA NIM (MOD-02) is a hosted API, so the assistant is **not autonomous** on a real mission. Its free tier is for evaluation only, so the assistant only ever sends it synthetic data; if it is unreachable, the assistant reports that it is unavailable while the rest of the app continues working.
 - Thresholds and emergency steps are illustrative, not medical guidance.
 - Access: users pick one of 4 fictional astronaut profiles and enter a 4-digit PIN (roles: crew, commander). The start screen shows only general crew status; details are private per profile. A 4-digit PIN is demo-level access control, **not real security**. Emergency mode deliberately works without a PIN.
 - Out of scope: gamification, offline mode and camera input. Stretch only: radiation context and flight-surgeon report. Environments: space station and spacecraft in transit only.
@@ -62,7 +62,7 @@ Only resources demonstrable in the app are listed (see `docs/spec.md` §7).
 <!-- Required by Space Apps. Keep updated during the hackathon. -->
 | Tool | Used for |
 |---|---|
-| Mistral API | In-app assistant (explanations with sources) |
+| ~~Mistral API~~ NVIDIA NIM — ~~`deepseek-ai/deepseek-v4.1-flash` (MOD-02)~~ `nvidia/nemotron-3.5-super-vl-120b-a12b` (MOD-03) | In-app assistant (explanations with sources) |
 | _e.g. Copilot / Cursor / Claude_ | _code assistance in …_ |
 
 AI-generated images/video are visibly marked. No NASA logos or mission insignia are used.

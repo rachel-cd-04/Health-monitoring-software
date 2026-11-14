@@ -24,7 +24,7 @@ export const openapi: Record<string, unknown> = {
     { name: 'Emergency', description: 'PIN-free emergency workflow' },
     { name: 'Radiation', description: 'Simulated radiation context' },
     { name: 'Sources', description: 'NASA and mission reference sources' },
-    { name: 'Assistant', description: 'Optional bounded Mistral assistant' },
+    { name: 'Assistant', description: 'Optional bounded LLM assistant (OpenAI-compatible API, NVIDIA NIM by default)' },
   ],
   components: {
     securitySchemes: {
@@ -184,10 +184,11 @@ export const openapi: Record<string, unknown> = {
       },
       AssistantRequest: {
         type: 'object',
-        required: ['astronaut_id', 'message'],
+        required: ['message'],
+        additionalProperties: false,
+        description: 'MOD-01: no astronaut_id. Private data of the logged-in astronaut is unlocked by the optional bearer token.',
         properties: {
-          astronaut_id: { type: 'integer', minimum: 1 },
-          message: { type: 'string', minLength: 1, maxLength: 4000 },
+          message: { type: 'string', minLength: 1, maxLength: 2000 },
         },
       },
     },
@@ -281,7 +282,7 @@ export const openapi: Record<string, unknown> = {
       get: { tags: ['Sources'], summary: 'List NASA and mission reference sources', responses: { '200': json({ type: 'array', items: ref('Source') }) } },
     },
     '/api/assistant/chat': {
-      post: { tags: ['Assistant'], security: secured, summary: 'Ask the bounded Mistral agentic assistant', requestBody: { required: true, content: { 'application/json': { schema: ref('AssistantRequest') } } }, responses: { '200': json({ type: 'object', properties: { answer: { type: 'string' }, sources: { type: 'array', items: ref('Source') }, data_used: { type: 'array', items: { type: 'string' } }, caution: { type: 'string' }, mode: { type: 'string', enum: ['agentic', 'unavailable'] } } }), '400': errorResponse(), '401': errorResponse(), '403': errorResponse(), '503': errorResponse('Mistral unavailable') } },
+      post: { tags: ['Assistant'], security: [{}, { bearerAuth: [] }], summary: 'Ask the bounded LLM agentic assistant (public; optional token unlocks own private data — MOD-01)', requestBody: { required: true, content: { 'application/json': { schema: ref('AssistantRequest') } } }, responses: { '200': json({ type: 'object', properties: { answer: { type: 'string' }, sources: { type: 'array', items: ref('Source') }, data_used: { type: 'array', items: { type: 'string' } }, caution: { type: 'string' }, mode: { type: 'string', enum: ['agentic'] }, scope: { type: 'string', enum: ['public', 'private'] } } }), '400': errorResponse(), '401': errorResponse('Invalid or expired token'), '429': errorResponse('Rate limit exceeded'), '503': errorResponse('LLM provider unavailable (AI_UNAVAILABLE)') } },
     },
   },
 };

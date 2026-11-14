@@ -31,6 +31,19 @@ export function requireAuth(req: AuthRequest, res: Response, next: NextFunction)
   next();
 }
 
+/**
+ * MOD-01: public endpoint that unlocks more data with a token (used by /assistant/chat).
+ * No Authorization header → anonymous. A header with an invalid/expired token → 401, so a stale
+ * session is never silently downgraded to anonymous without the client noticing.
+ */
+export function optionalAuth(req: AuthRequest, res: Response, next: NextFunction) {
+  if (!req.header('authorization')) return next();
+  const astronaut = authFrom(req);
+  if (!astronaut) return sendError(res, 401, 'UNAUTHENTICATED', 'The bearer token is invalid or expired. Log in again or send no token.');
+  req.astronaut = astronaut;
+  next();
+}
+
 export function requireSelf(req: AuthRequest, res: Response, next: NextFunction) {
   const requested = Number(req.params.id ?? req.body?.astronaut_id);
   if (!req.astronaut || requested !== req.astronaut.id) {

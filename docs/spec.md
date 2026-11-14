@@ -18,7 +18,7 @@ Long-duration missions expose astronauts to space radiation, isolation and confi
   | Level | Who | What is visible |
   |---|---|---|
   | **General** (no PIN) | Anyone on the start screen | Mission day, environment, comms delay; per astronaut: name, role, avatar, one overall status light and the **number** of active alerts. Never which system, never values, never mood/sleep |
-  | **Private** (own PIN) | The astronaut inside their own profile | Values, trends, check-ins, body map, detailed alerts, assistant |
+  | **Private** (own PIN) | The astronaut inside their own profile | Values, trends, check-ins, body map, detailed alerts, ~~assistant~~ _(deprecated by MOD-01: the assistant is now global, see "Assistant access" below)_ |
 - **Two roles**, stored in `astronauts.role`:
   | Role | Can do |
   |---|---|
@@ -27,6 +27,13 @@ Long-duration missions expose astronauts to space radiation, isolation and confi
 - **Emergency bypasses the PIN.** The red button works from any screen without logging in. The person who is helping may see the patient's recent vitals and active alerts **through the emergency flow only** (safety over privacy). `reporter_id` is optional.
 - **PIN mechanics:** hashed in the DB; `POST /auth/login` returns a JWT valid 12 h (one shift); 3 wrong attempts lock that profile for 30 s. Demo PINs are fictional and listed in the README.
 - **No ground/flight-surgeon user:** ground only receives the generated emergency summary.
+- **Assistant access (MOD-01).** The assistant is available **globally**, from every screen including the start screen, with or without a PIN. What it may read depends on the session:
+  | Session | Own data | Other astronauts | Source registry |
+  |---|---|---|---|
+  | No PIN (general level) | — | Active alerts only (level + title) | Yes |
+  | Logged in (own PIN) | Full private data (values, trends, check-ins, detailed alerts) | Active alerts only (level + title) | Yes |
+  - The only public data per astronaut is their **active alerts**. Values, trends, check-ins, mood and sleep of anyone other than the logged-in astronaut are never available to the assistant.
+  - The astronaut whose private data is used comes from the JWT, never from the request body or from the model. If asked about another astronaut's private data, the assistant answers that it is private.
 - **Declared limit (README):** a 4-digit PIN is not real security (brute-forceable beyond the lockout); it only makes the privacy levels meaningful for the demo. A real mission would need proper access control and medical privacy rules.
 
 ## 3. Scope
@@ -61,7 +68,7 @@ A *hazard* is an environmental condition; a *risk* is the concrete health effect
 | F6 | Dynamic trend charts vs. baseline | P0 |
 | F7 | Mission simulator (scripted story) | P0 |
 | F8 | Routine & measurement reminders | P1 |
-| F9 | AI assistant (Mistral agentic loop) | P1 |
+| F9 | AI assistant (~~Mistral agentic loop~~ _(deprecated by MOD-02)_ → LLM agentic loop via OpenAI SDK + NVIDIA NIM, MOD-02) | P1 |
 | F10 | Crew view (commander) | P1 |
 | F11 | Environment selector (space station, spacecraft in transit only) | P1 |
 | F12 | Gamification | Removed |
@@ -110,10 +117,14 @@ Screen-level detail: see `features.md`.
 
 **HM-08 · Routine (F8)** — Daily list of due measurements with overdue highlighting.
 **HM-09 · Assistant (F9)**
-- [ ] Answers only with backend tools and Mistral's bounded agentic loop; every answer lists clickable sources.
+- [ ] ~~Answers only with backend tools and Mistral's bounded agentic loop; every answer lists clickable sources.~~ _(deprecated by MOD-02)_
+- [ ] **(MOD-02)** Answers only with backend tools and the LLM's bounded agentic loop (OpenAI-compatible API, NVIDIA NIM by default); every answer lists clickable sources.
 - [ ] Never diagnoses; for symptoms it points to Emergency mode and mission procedure.
-- [ ] If Mistral is unreachable, the assistant reports that it is unavailable; the rest of the app is unaffected.
+- [ ] If ~~Mistral~~ the LLM provider (MOD-02) is unreachable, the assistant reports that it is unavailable; the rest of the app is unaffected.
 - [ ] Limit stated in README: a hosted LLM is not autonomous on a real mission.
+- [ ] **(MOD-01)** Reachable from every screen, including the start screen without a PIN.
+- [ ] **(MOD-01)** Without a PIN it uses only the source registry and every astronaut's active alerts (level + title).
+- [ ] **(MOD-01)** With a PIN it can also use the logged-in astronaut's own private data, never another astronaut's (values, trends, check-ins, mood, sleep).
 
 **HM-13 · Radiation context (F13, stretch)**
 - [ ] Simulated dose / dose rate by time and location (cabin, EVA, shelter) with radiation type and instrument.
@@ -165,3 +176,12 @@ See `constitution.md`. 100 % synthetic data. At least one NASA resource from the
 - Supabase is only accessed from the backend with the service key; RLS is on with no public policies.
 - Emergency tree and guides are static JSON bundled with the frontend. There is no offline mode: the app needs its backend (except in the no-backend demo, which stores data in the browser).
 - Auth: PIN → JWT (`Authorization: Bearer`), signed with `JWT_SECRET` (backend `.env` only). Libraries: `bcryptjs`, `jsonwebtoken`. See "Access, privacy and roles".
+
+## 9. Modifications log
+Changes made after the first version of the spec. Replaced text stays in the docs with ~~strikethrough~~ and the mark _deprecated by MOD-xx_.
+
+| ID | Date | Change | Affected docs |
+|---|---|---|---|
+| MOD-03 | 2026-11-14 | Default model changes from `deepseek-ai/deepseek-v4.1-flash` to **`nvidia/nemotron-3.5-super-vl-120b-a12b`** (best results in the team's tests). The agentic loop waits **at least 1 s** between consecutive LLM requests (`LLM_COOLDOWN_MS`, minimum 1000). | spec, plan, api-contract, README |
+| MOD-02 | 2026-11-14 | The assistant's LLM provider changes from Mistral (`@mistralai/mistralai`) to the **OpenAI SDK** against **NVIDIA NIM** (`https://integrate.api.nvidia.com/v1`), default model `deepseek-ai/deepseek-v4.1-flash`. Provider, base URL and model are env vars (`LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL`), so any OpenAI-compatible provider can replace it without code changes. | spec, plan, constitution, api-contract, tasks, verification, README |
+| MOD-01 | 2026-11-14 | The AI assistant is **global**: available on every screen, with or without a PIN. Per-astronaut privacy is kept. Public data = each astronaut's active alerts (level + title). With a PIN, the assistant can also use the logged-in astronaut's own private data, never anyone else's. | spec, plan, features, api-contract, tasks, verification, traceability, README |
