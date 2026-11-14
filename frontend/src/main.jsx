@@ -1,247 +1,108 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { createRoot } from 'react-dom/client';
-import { Activity, Users, ClipboardList, BookOpen, Settings, ChevronRight, ArrowLeft, X, Plus, Check, AlertTriangle, Eye, Download, Heart, Thermometer, Moon, Droplet, Dumbbell, Smile, Battery, Clock, RotateCcw, Shield, CheckCircle2, Circle, ChevronDown, ExternalLink, Lock, Search, ArrowUpRight, CheckCheck, Copy, User } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import Body from './Body';
-import { CREW, MISSION_DAY, MISSION_LENGTH } from './sim';
-import { INDICATORS, LOG_ITEMS, GUIDES, SOURCES, CHECKIN_ORDER, CHECKINS_PER_DAY } from './content/indicators';
-import { buildEngine } from './rules';
-import { loadState, saveState, freshState, makeRecord, uid, fmtTime, fmtVal, latestOf, vsBaseline, downloadFile, dateOfDay, fmtDate } from './store';
+import React,{useEffect,useMemo,useRef,useState} from 'react';
+import {createRoot} from 'react-dom/client';
+import {Activity,Users,ClipboardList,Radio,BookOpen,Settings,ArrowUpRight,ChevronDown,Check,X,CheckCircle2,BellRing,Bell,Radiation} from 'lucide-react';
+import {crew,readState,checkIn,timeLabel,stamp,missionDayNumber,environments,localId} from './models/crewModel.js';
+import {uuid} from './models/ids.js';
+import {LOCKED,canView,isExpired,isUnlocked} from './models/access.js';
+import {PinPad,SessionChip,ProfilePicker,MissionSelector,LockedPanel} from './components/AccessUI.jsx';
+import {crewSignals} from './models/rules.js';
+import {buildReport} from './models/healthReport.js';
+import ReportProblem from './components/ReportProblem.jsx';
+import {RiskSheet} from './components/Signals.jsx';
+import Environment from './pages/Environment.jsx';
+import AssistantDock from './components/AssistantDock.jsx';
+import {CrewOverview} from './pages/HealthView.jsx';
+import HealthProfile from './pages/HealthProfile.jsx';
+import {NotificationButton,NotificationCenter,notificationModel} from './components/Notifications.jsx';
+import {environmentSignals} from './models/envData.js';
+import {api,apiConfigured,apiList,setApiToken} from './services/apiClient.js';
+import {createCheckInController} from './controllers/checkInController.js';
+
+import CheckInStation from './components/CheckInStation.jsx';
+import History from './pages/History.jsx';
+import Emergency,{CrewAlertBanner} from './components/Emergency.jsx';
+import {Medical,SettingsPanel,Sources,connectionNames,readA11y,applyA11y} from './pages/Support.jsx';
 import './styles.css';
+import './health.css';
+import './operations.css';
+import './quick-checkin.css';
+import './theme.css';
+import './dark-legacy.css';
+import './shell.css';
+import './emergency.css';
 
-const iconFor = { heart_rate: Heart, bp_systolic: Activity, bp_diastolic: Activity, blood_sugar: Droplet, temperature: Thermometer, sleep_hours: Moon, mood: Smile, fatigue: Battery, exercise_min: Dumbbell };
-const WHO = { self: 'You', crew: 'Crew', ground: 'Flight surgeon on ground' };
-const STATUS_TEXT = { green: 'No active alerts', amber: 'Needs attention', red: 'Needs attention now', grey: 'No recent data' };
-
-function App() {
-  const [data, setData] = useState(loadState);
-  const [view, setView] = useState('crew');
-  const [detail, setDetail] = useState(null);
-  const [locked, setLocked] = useState(null);
-  const [metric, setMetric] = useState('heart_rate');
-  const [period, setPeriod] = useState(30);
-  const [measure, setMeasure] = useState(null);
-  const [checkin, setCheckin] = useState(false);
-  const [emergency, setEmergency] = useState(false);
-  const [emergencyFor, setEmergencyFor] = useState(null);
-  const [settings, setSettings] = useState(false);
-  const [session, setSession] = useState(false);
-  const [toast, setToast] = useState('');
-  const [now, setNow] = useState(Date.now());
-  const [storageError, setStorageError] = useState(false);
-  const timer = useRef(null);
-  useEffect(() => { setStorageError(!saveState(data)); }, [data]);
-  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
-  useEffect(() => () => clearTimeout(timer.current), []);
-  const notify = text => { setToast(text); clearTimeout(timer.current); timer.current = setTimeout(() => setToast(''), 4500); };
-  const eng = useMemo(() => buildEngine(data.records, data.emergencyLogs), [data.records, data.emergencyLogs]);
-  const operator = CREW.find(c => c.id === data.operator) || CREW[2];
-  const openPerson = id => { if (id !== operator.id) { setLocked(id); return; } setMetric('heart_rate'); setDetail(id); };
-  const recordMeasurement = (records, opts = {}) => {
-    setData(old => ({ ...old, records: [...old.records, ...records] }));
-    if (!opts.silent) notify('Measurement saved to the history of ' + CREW.find(c => c.id === records[0].astroId).name);
-  };
-  const finishCheckin = () => setData(d => ({ ...d, checkins: [...(d.checkins || []), { id: uid(), astroId: operator.id, day: MISSION_DAY, ts: Date.now() }] }));
-  const checkinsToday = (data.checkins || []).filter(c => c.astroId === operator.id && c.day === MISSION_DAY).length;
-  const ack = a => { setData(d => ({ ...d, ack: { ...d.ack, [a.key]: Date.now() } })); notify('Alert acknowledged'); };
-  const nav = [['crew', 'Crew', Users], ['records', 'History', ClipboardList], ['sources', 'Library', BookOpen]];
-  const totalAlerts = CREW.reduce((t, c) => t + eng.alerts[c.id].length, 0);
-
-  return <div className="app-shell">
-    <header className="topbar"><button className="brand" onClick={() => setView('crew')} aria-label="SOMA home"><span className="brand-mark"><Activity size={25} /></span><span>SOMA<small>Flight Health</small></span></button><div className="mission-name"><span className="mission-dot" />Space transit<span className="divider" />Day {MISSION_DAY} of {MISSION_LENGTH}</div><div className="top-right"><span className="demo-label">Simulated data</span><time>{fmtTime(now)}<small>local</small></time><button className="operator" onClick={() => setSession(true)}><span className="avatar" style={{ '--person': operator.color }}>{operator.initials}</span><span>{operator.name}<small>Demo operator</small></span><ChevronDown size={14} /></button></div></header>
-    <aside className="sidebar"><div className="nav-label">On board</div><nav>{nav.map(([id, label, Icon]) => <button key={id} aria-label={label} className={'nav-button ' + (view === id ? 'selected' : '')} onClick={() => setView(id)}><Icon size={20} /><span>{label}</span></button>)}</nav><div className="side-bottom"><button className="nav-button" onClick={() => setSettings(true)}><Settings size={19} />Settings</button><button aria-label="Emergency" className="emergency-nav" onClick={() => setEmergency(true)}><Plus size={20} /><span>Emergency</span><ArrowUpRight size={17} /></button><div className="side-foot">SOMA / demo<span>Health terminal</span></div></div></aside>
-    <main className="main-content">
-      {storageError && <div className="banner warning">Your browser does not allow saving data. Download your records before closing.</div>}
-      {view === 'crew' && <><PageHeading eyebrow="Crew monitor" title="Your team's status." subtitle="General status only. Health details are private to each person." actions={<button className="button primary" onClick={() => setMeasure({ crewId: operator.id, item: 'heart_rate' })}><Plus size={17} />Log measurement</button>} />
-        <div className="status-ribbon"><div><span className="status-light green" /><b>Simulated data</b></div><span>04 <small>crew members</small></span><span className={totalAlerts ? 'amber-text' : ''}>{String(totalAlerts).padStart(2, '0')} <small>active alerts</small></span><span><Shield size={15} />Local record</span></div>
-        <section className="crew-grid" aria-label="General status of the four crew members">{CREW.map((person, i) => {
-          const st = eng.status[person.id].overall; const n = eng.alerts[person.id].length; const warn = st === 'amber' || st === 'red';
-          return <article className={'crew-panel ' + (warn ? 'has-alert' : '')} key={person.id} style={{ '--person': person.color }}><div className="crew-panel-top"><span className="crew-number">{String(i + 1).padStart(2, '0')}</span><span className={'tiny-state ' + (warn ? 'amber' : '')}>{STATUS_TEXT[st]}</span></div><button className="crew-name" onClick={() => openPerson(person.id)}><h2>{person.name}</h2><span>{person.role}</span><ChevronRight size={17} /></button><button className="body-button" onClick={() => openPerson(person.id)} aria-label={`Open profile of ${person.name}`}><div className="body-caption">Front view</div><Body uid={person.id} alert={warn} /><span className="body-coordinate">General status only</span></button><div className="public-info"><div><b>{n}</b><span>active alert{n === 1 ? '' : 's'}</span></div><div className="private-note"><Lock size={13} />Health values are private</div></div><button className={'crew-status ' + (warn ? 'warning' : '')} onClick={() => openPerson(person.id)}>{warn ? <AlertTriangle size={15} /> : <CheckCircle2 size={15} />}<span>{person.id === operator.id ? 'Open my private profile' : 'Profile is private'}</span><ChevronRight size={14} /></button></article>;
-        })}</section>
-        <div className="dashboard-bottom"><section className="panel next-panel"><div className="section-heading"><h3>Daily check-in</h3><span>{Math.min(checkinsToday, CHECKINS_PER_DAY)} of {CHECKINS_PER_DAY} done today</span></div><div className="next-content"><div className="next-icon"><ClipboardList size={24} /></div><div><h4>How are you feeling, {operator.name.split(' ')[0]}?</h4><p>{checkinsToday >= CHECKINS_PER_DAY ? 'Daily target done. You can do another check-in at any time.' : 'A guided walk through your measurements. Aim for two check-ins a day.'}</p></div><button className="button primary" onClick={() => setCheckin(true)}>{checkinsToday >= CHECKINS_PER_DAY ? 'Do another check-in' : 'Start check-in'}<ChevronRight size={16} /></button></div></section></div>
-        <p className="data-footnote">Synthetic demonstration data. Public view: name, role and general status only. Health values stay private to each person.</p>
-      </>}
-      {view === 'records' && <Records data={data} operator={operator} />}
-      {view === 'sources' && <Sources />}
-      <footer className="main-footer"><span><Activity size={13} />SOMA · Health during flight</span><span>All data is simulated · Thresholds are illustrative · Not a diagnosis</span></footer>
-    </main>
-    {detail && <Modal title="Private health profile" onClose={() => setDetail(null)} wide><PersonDetail person={CREW.find(c => c.id === detail)} eng={eng} data={data} metric={metric} setMetric={setMetric} period={period} setPeriod={setPeriod} onAck={ack} onMeasure={() => { setMeasure({ crewId: detail, item: INDICATOR_TO_ITEM[metric] }); setDetail(null); }} /></Modal>}
-    {checkin && <CheckIn operator={operator} data={data} eng={eng} onClose={() => setCheckin(false)} onSave={recordMeasurement} onFinish={finishCheckin} onProfile={() => { setCheckin(false); setMetric('heart_rate'); setDetail(operator.id); }} />}
-    {measure && <Measurement initial={measure} operator={operator} eng={eng} onClose={() => setMeasure(null)} onSave={recordMeasurement} />}
-    {locked && <Modal title="Private profile" onClose={() => setLocked(null)}>{(() => { const p = CREW.find(c => c.id === locked); return <div className="locked-view"><span className="avatar large" style={{ '--person': p.color }}>{p.initials}</span><h2>{p.name}</h2><p className="muted">{p.role}</p><div className="locked-box"><Lock size={20} /><div><b>Health details are private.</b><p>Values, trends and records can only be seen by {p.name.split(' ')[0]}. The overview shows general status only.</p></div></div><div className="locked-actions"><button className="button danger" onClick={() => { setEmergencyFor(p.id); setLocked(null); setEmergency(true); }}><Plus size={17} />Emergency for {p.name.split(' ')[0]}</button><button className="button subtle" onClick={() => { setData(d => ({ ...d, operator: p.id })); setLocked(null); notify('Demo operator: ' + p.name); }}>Switch to {p.name.split(' ')[0]} (demo)</button></div><p className="small muted">The operator switch is a demo shortcut. A PIN will replace it.</p></div>; })()}</Modal>}
-    {emergency && <Emergency eng={eng} operator={operator} initialPatient={emergencyFor} onClose={() => { setEmergency(false); setEmergencyFor(null); }} setData={setData} />}
-    {settings && <SettingsModal data={data} setData={setData} onClose={() => setSettings(false)} notify={notify} />}
-    {session && <Modal title="Select demo operator" onClose={() => setSession(false)}><p className="muted">Demo shortcut: identifies who is logging. It does not protect anything; a PIN will replace it.</p><div className="operator-list">{CREW.map(c => <button key={c.id} onClick={() => { setData(d => ({ ...d, operator: c.id })); setSession(false); notify('Demo operator: ' + c.name); }}><span className="avatar" style={{ '--person': c.color }}>{c.initials}</span><span><b>{c.name}</b><small>{c.role}</small></span>{c.id === operator.id && <Check size={20} />}</button>)}</div></Modal>}
-    {toast && <div className="toast" role="status"><CheckCircle2 size={18} />{toast}<button onClick={() => setToast('')} aria-label="Close notification"><X size={16} /></button></div>}
-  </div>;
+function App(){
+ const [data,setData]=useState(readState),[view,setView]=useState('crew'),[detail,setDetail]=useState(null),[station,setStation]=useState(null),[emergency,setEmergency]=useState(null),[settings,setSettings]=useState(false),[reminders,setReminders]=useState(false),[historyMetric,setHistoryMetric]=useState('pulse'),[operatorPicker,setOperatorPicker]=useState(false),[toast,setToast]=useState(''),[storageError,setStorageError]=useState(false),[historyPerson,setHistoryPerson]=useState(null),[report,setReport]=useState(null),[now,setNow]=useState(Date.now()),[riskSheet,setRiskSheet]=useState(null),[a11y,setA11y]=useState(readA11y),[access,setAccess]=useState(LOCKED),[pin,setPin]=useState(null),[picker,setPicker]=useState(false),[problem,setProblem]=useState(null),[apiStatus,setApiStatus]=useState(apiConfigured?'checking':'missing'),[backendCrew,setBackendCrew]=useState([]),[backendOverview,setBackendOverview]=useState(null),[privateApiSignals,setPrivateApiSignals]=useState({});
+ useEffect(()=>{applyA11y(a11y);if(a11y.theme!=='system')return;const mq=window.matchMedia('(prefers-color-scheme: dark)');const on=()=>applyA11y(a11y);mq.addEventListener('change',on);return()=>mq.removeEventListener('change',on)},[a11y]);
+ const toastTimer=useRef();const operator=crew.find(c=>c.id===data.operator)||crew[2];
+ const notify=text=>{setToast(text);clearTimeout(toastTimer.current);toastTimer.current=setTimeout(()=>setToast(''),4200)};
+ const profileFor=id=>backendCrew.find(p=>p.frontendId===id);
+ useEffect(()=>{if(!apiConfigured)return;let alive=true;Promise.all([api('/api/astronauts',{auth:false}),api('/api/crew/overview',{auth:false})]).then(([people,overview])=>{if(!alive)return;setBackendCrew(apiList(people).map(p=>({...p,frontendId:String(p.name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').split(' ')[0].toLowerCase()})));setBackendOverview(overview);setApiStatus('connected');}).catch(error=>{if(!alive)return;setApiStatus('error');notify(`Backend unavailable: ${error.message}`)});return()=>{alive=false}},[]);
+ const authenticate=async(personId,code)=>{const profile=profileFor(personId);if(!profile)throw new Error('Crew profiles could not be loaded from the backend.');setApiToken('');setAccess(LOCKED);setDetail(null);const session=await api('/api/auth/login',{method:'POST',auth:false,body:{astronaut_id:Number(profile.id),pin:code}});setApiToken(session.token);try{const snapshot=await api(`/api/astronauts/${profile.id}/status`);const map={heart_rate:'pulse',bp_systolic:'bp',blood_sugar:'glucose',temperature:'temp',sleep_hours:'sleep',mood:'mood',fatigue:'fatigue',exercise_min:'exercise'};const measurements=(snapshot.systems||[]).flatMap(system=>system.latest||[]);const diastolic=new Map(measurements.filter(m=>m.indicator==='bp_diastolic').map(m=>[new Date(m.ts).getTime(),Number(m.value)]));const records=measurements.filter(m=>map[m.indicator]).map(m=>{const time=new Date(m.ts).getTime();return {id:String(m.id),crewId:personId,metric:map[m.indicator],value:Number(m.value),...(m.indicator==='bp_systolic'?{diastolic:diastolic.get(time)}:{}),time,source:m.source||'Backend',context:'Recorded measurement',operator:personId}});setData(d=>({...d,operator:personId,records}));const ruleMap={heart_rate:'pulse',bp_systolic:'bp',bp_diastolic:'bp',blood_sugar:'glucose',temperature:'temp',sleep_hours:'sleep',mood:'mood',fatigue:'fatigue',exercise_min:'exercise'};setPrivateApiSignals(s=>({...s,[personId]:(snapshot.active_alerts||[]).map(a=>({id:`api-alert-${a.id}`,ruleId:a.rule_id,crewId:personId,metric:ruleMap[a.indicator],level:a.level==='red'?'review':'watch',severity:a.level,short:a.message,title:a.message,compare:a.value==null?'Active alert':String(a.value),reason:a.message,whoActs:(a.who_acts||[]).join(', '),actions:a.actions||[],observed:{value:a.value,time:new Date(a.ts).getTime()},source:a.source}))}))}catch(error){setApiToken('');throw error}setAccess({all:false,ids:[personId],at:Date.now()});setPin(null);notify(`${crew.find(c=>c.id===personId).name} signed in.`);return {scope:'self',profile};};
+ const can=id=>canView(access,id);
+ const requestAccess=(id,then)=>{if(canView(access,id)){setAccess(a=>({...a,at:Date.now()}));then?.();return}setPin({personId:id,then})};
+ const lockAll=()=>{setAccess(LOCKED);setApiToken('');setDetail(null);notify('Private data locked.')};
+ useEffect(()=>{if(isExpired(access,now)){setAccess(LOCKED);setApiToken('');setDetail(null);notify('Locked after 5 minutes without activity.')}},[now]);
+ useEffect(()=>{if(!isUnlocked(access))return;const touch=()=>setAccess(a=>isUnlocked(a)?{...a,at:Date.now()}:a);window.addEventListener('pointerdown',touch);window.addEventListener('keydown',touch);return()=>{window.removeEventListener('pointerdown',touch);window.removeEventListener('keydown',touch)}},[isUnlocked(access)]);
+ const setEnvironment=id=>{const e=environments[id];setData(d=>({...d,environment:id,connection:e.connection,latency:e.latency}));notify('Mission situation: '+e.label)};
+ useEffect(()=>{if(apiConfigured){setStorageError(false);return}try{localStorage.setItem('soma-v2',JSON.stringify(data));setStorageError(false)}catch{setStorageError(true)}},[data]);
+ useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),30000);return()=>clearInterval(timer)},[]);
+ useEffect(()=>{if(apiConfigured)return;const receive=e=>{if(e.key==='soma-v2'&&e.newValue){try{const next=JSON.parse(e.newValue);if(next.version===2&&Array.isArray(next.records)&&Array.isArray(next.crewAlerts))setData(next)}catch{}}};window.addEventListener('storage',receive);return()=>window.removeEventListener('storage',receive)},[]);
+ useEffect(()=>()=>clearTimeout(toastTimer.current),[]);
+ useEffect(()=>{const timer=setInterval(()=>setData(old=>{if(old.connection==='offline')return old;let changed=false;const now=Date.now();const messages=old.messages.map(m=>{if(m.status==='pending'){changed=true;return {...m,status:'sent',sentAt:now,receiveAt:now+(old.connection==='online'?1500:old.latency*60000)}}if(m.status==='sent'&&now>=m.receiveAt){changed=true;return {...m,status:'received'}}return m});return changed?{...old,messages}:old}),1000);return()=>clearInterval(timer)},[]);
+ const localSignals=useMemo(()=>crewSignals(data,Math.max(now,Date.now())),[data.records,data.sessions,now]);
+ const signals=useMemo(()=>{if(!backendOverview?.crew)return localSignals;const remote=Object.fromEntries(backendOverview.crew.map(p=>{const id=backendCrew.find(c=>Number(c.id)===Number(p.id))?.frontendId;return id?[id,[{id:`api:${p.id}`,level:p.overall==='red'?'review':p.overall==='amber'?'watch':'info',short:p.active_alert_count?`${p.active_alert_count} active alert${p.active_alert_count===1?'':'s'}`:'Backend status',title:'Status supplied by the health API'}]]:[]}));for(const id of access.ids)remote[id]=privateApiSignals[id]||[];return {...remote,...(access.all?localSignals:{})}},[backendOverview,backendCrew,localSignals,privateApiSignals,access]);
+ const notif=notificationModel(data,now,signals,environmentSignals(now));
+ const snoozeReminder=id=>{setData(d=>({...d,reminderSnoozes:{...d.reminderSnoozes,[id]:Date.now()+15*60000}}));notify('Reminder snoozed for 15 minutes.')}
+ const restoreReminder=id=>setData(d=>{const next={...d.reminderSnoozes};delete next[id];return {...d,reminderSnoozes:next}});
+ const startReminder=initial=>{setReminders(false);setStation(initial)};
+ const openHistory=(id,metric='pulse')=>requestAccess(id,async()=>{try{const profile=profileFor(id);if(profile){const map={heart_rate:'pulse',bp_systolic:'bp',blood_sugar:'glucose',temperature:'temp',sleep_hours:'sleep',mood:'mood',fatigue:'fatigue',exercise_min:'exercise'};const indicators=[...Object.keys(map),'bp_diastolic'];const histories=await Promise.all(indicators.map(indicator=>api(`/api/astronauts/${profile.id}/history?indicator=${encodeURIComponent(indicator)}&days=180`)));const diastolic=new Map((histories.at(-1).points||[]).map(point=>[new Date(point.ts).getTime(),Number(point.value)]));const records=histories.slice(0,-1).flatMap((history,index)=>(history.points||[]).map((point,n)=>{const time=new Date(point.ts).getTime();return {id:`history-${indicators[index]}-${n}`,crewId:id,metric:map[indicators[index]],value:Number(point.value),...(indicators[index]==='bp_systolic'?{diastolic:diastolic.get(time)}:{}),time,source:point.source||'Backend',context:'Health API history',operator:id}}));setData(d=>({...d,records:[...d.records.filter(r=>r.crewId!==id),...records]}))}}catch(error){notify(`Could not load history: ${error.message}`)}setHistoryPerson(id);setHistoryMetric(metric);setView('records');setDetail(null)});
+ const navigate=id=>{setView(id);setDetail(null)};
+ const openPerson=id=>requestAccess(id,()=>{setDetail(id);setView('crew')});
+ const openStation=initial=>requestAccess(initial.crewId,()=>setStation(initial));
+ const saveCheckIn=createCheckInController({profileFor,setData,notify,crew});
+ const appendChat=(key,message)=>setData(d=>({...d,chatThreads:{...d.chatThreads,[key]:[...(d.chatThreads[key]||[]),message]}}));
+ const broadcast=async({patient,situation,description})=>{const patientProfile=profileFor(patient),reporterProfile=profileFor(operator.id),scenario=situation==='Severe pain or discomfort'?'chest_pain':situation==='Not responding'?'collapsed':situation==='Breathing difficulty'?'breathing':situation==='Injury'?'bleeding':'other';const result=await api('/api/emergency',{method:'POST',auth:false,body:{scenario,...(patientProfile?{patient_id:Number(patientProfile.id)}:{}),...(reporterProfile?{reporter_id:Number(reporterProfile.id)}:{})}});const event=result.event,id=event.id;setData(d=>({...d,crewAlerts:[{id,patient,situation,description,createdAt:new Date(event.startedAt||Date.now()).getTime(),createdBy:operator.id,status:'active',acknowledgedBy:[operator.id],assessment:situation==='Not responding'?{responsive:'no'}:situation==='Breathing difficulty'?{breathing:'no'}:{},log:[]},...d.crewAlerts]}));notify('On-board emergency saved to the health API.');return id};
+ const acknowledge=id=>{const apiId=String(id).replace(/^api-alert-/,'');if(/^\d+$/.test(apiId)){api(`/api/alerts/${apiId}/acknowledge`,{method:'PATCH'}).then(async()=>{setPrivateApiSignals(s=>({...s,[operator.id]:(s[operator.id]||[]).filter(a=>a.id!==id)}));try{setBackendOverview(await api('/api/crew/overview',{auth:false}))}catch{}notify('Alert acknowledged by '+operator.name)}).catch(error=>notify(`Could not acknowledge alert: ${error.message}`));return}if(apiConfigured&&/^[0-9a-f-]{36}$/i.test(String(id))){api(`/api/emergency/${id}/steps`,{method:'POST',auth:false,body:{id:uuid(),step_id:'crew_acknowledgement',answer:`${operator.name} acknowledged the emergency.`,ts:new Date().toISOString()}}).catch(error=>notify(`Could not save acknowledgement: ${error.message}`))}setData(d=>({...d,crewAlerts:d.crewAlerts.map(a=>a.id===id?{...a,acknowledgedBy:[...new Set([...a.acknowledgedBy,operator.id])]}:a)}));notify('Acknowledged by '+operator.name)};
+ const patchIncident=(id,fn)=>{const current=data.crewAlerts.find(a=>a.id===id)||{id,log:[]};const updated=fn(current);setData(d=>({...d,crewAlerts:d.crewAlerts.some(a=>a.id===id)?d.crewAlerts.map(a=>a.id===id?{...a,...updated}:a):[{...updated},...d.crewAlerts]}));const latest=updated.log?.at(-1);if(apiConfigured&&/^[0-9a-f-]{36}$/i.test(String(id))&&latest&&updated.log.length>(current.log?.length||0))api(`/api/emergency/${id}/steps`,{method:'POST',auth:false,body:{id:latest.id,step_id:updated.step||'progress',answer:latest.text,ts:new Date(latest.ts).toISOString()}}).catch(error=>notify(`Could not save emergency step: ${error.message}`))};
+ const updateAssessment=(id,assessment)=>setData(d=>({...d,crewAlerts:d.crewAlerts.map(a=>a.id===id?{...a,assessment,updatedAt:Date.now()}:a)}));
+ const resolve=async(id,reason='Resolved')=>{if(apiConfigured&&/^[0-9a-f-]{36}$/i.test(String(id))){try{await api(`/api/emergency/${id}/close`,{method:'PATCH',auth:false,body:{ended_at:new Date().toISOString()}})}catch(error){notify(`Could not close emergency in the API: ${error.message}`);return}}setData(d=>({...d,crewAlerts:d.crewAlerts.map(a=>a.id===id?{...a,status:'closed',closedBy:operator.id,closedAt:Date.now(),closeReason:reason,log:[...(a.log||[]),{id:localId(),ts:Date.now(),text:'Emergency closed: '+reason}]}:a)}));notify('Emergency closed: '+reason+'.');setEmergency(null)};
+ const activeEmergency=data.crewAlerts.find(a=>a.status==='active');
+ const openEmergency=patient=>setEmergency(activeEmergency?{id:activeEmergency.id}:{patient});
+ const sendReport=(patient,body)=>{setData(d=>{const now=Date.now();return {...d,messages:[{id:localId(),patient,body,createdAt:now,status:d.connection==='offline'?'pending':'sent',sentAt:d.connection==='offline'?null:now,receiveAt:now+(d.connection==='online'?1500:d.latency*60000)},...d.messages]}});notify(data.connection==='offline'?'Report queued on board.':'Report submitted to the simulated ground channel.')};
+ const submitProblem=input=>{const person=crew.find(c=>c.id===problem);try{const {report,body}=buildReport(input,person,data);const messageId=body?localId():null;setData(d=>{const now=Date.now();const messages=body?[{id:messageId,patient:person.id,body,kind:'health-report',createdAt:now,status:d.connection==='offline'?'pending':'sent',sentAt:d.connection==='offline'?null:now,receiveAt:now+(d.connection==='online'?1500:d.latency*60000)},...d.messages]:d.messages;return {...d,messages,healthReports:[{...report,messageId},...(d.healthReports||[])]}});setProblem(null);notify(body?(data.connection==='offline'?'Report saved. It will go to Earth when the link is back.':'Report sent to the medical officer and to Earth.'):'Report sent to the medical officer.')}catch(e){notify(e.message)}};
+ const emergencyReport=incident=>{if(incident.summary){setReport({patient:incident.patient,body:incident.summary+'\n\nRequested ground support: '});setEmergency(null);navigate('medical');return}if(apiConfigured&&/^[0-9a-f-]{36}$/i.test(String(incident.id))){api(`/api/emergency/${incident.id}/summary`,{auth:false}).then(result=>{setReport({patient:incident.patient,body:(result.text||'Emergency summary unavailable.')+'\n\nRequested ground support: '});setEmergency(null);navigate('medical')}).catch(error=>notify(`Could not load emergency summary: ${error.message}`));return}setReport({patient:incident.patient,body:`On-board incident: ${incident.situation}\nObserved status: ${incident.description||'Not recorded'}\nRaised: ${stamp(incident.createdAt)}\nResponsive: ${incident.assessment?.responsive||'Not assessed'}\nNormal breathing: ${incident.assessment?.breathing||'Not assessed'}\nOnset: ${incident.assessment?.onset||'Not recorded'}\nCrew acknowledgements: ${incident.acknowledgedBy.map(id=>crew.find(c=>c.id===id)?.name).join(', ')}\n\nRequested ground support: `});setEmergency(null);navigate('medical')};
+ const nav=[['crew','Crew',Users],['records','History',ClipboardList],['environment','Environment',Radiation],['medical','Ground support',Radio],['sources','Reference library',BookOpen]];
+ return <div className="app-shell"><aside className="rail" aria-label="Main navigation"><button className="rail-brand" onClick={()=>navigate('crew')} aria-label="SOMA home"><Activity size={22}/></button><nav>{nav.map(([id,label,Icon])=><button key={id} aria-label={label} aria-current={view===id?'page':undefined} className={'rail-item '+(view===id?'selected':'')} onClick={()=>navigate(id)}><Icon size={21}/><span>{label}</span>{id==='medical'&&data.messages.some(m=>m.status==='pending')&&<b className="nav-count">{data.messages.filter(m=>m.status==='pending').length}</b>}</button>)}</nav><div className="rail-bottom"><button className="rail-item" aria-label="Mission settings" onClick={()=>setSettings(true)}><Settings size={21}/><span>Settings</span></button><button className="rail-alert" aria-label="Emergency" onClick={()=>openEmergency(detail)}><BellRing size={21}/><span>Emergency</span></button></div></aside>
+ <header className="top"><div className="top-mission"><span className="wordmark">SOMA</span><MissionSelector data={data} day={backendOverview?.mission_day||missionDayNumber(data,now)} onChange={setEnvironment}/><span className={'link-chip '+data.connection}><Radio size={14}/>{data.connection==='delayed'?`Earth link Â· ${data.latency} min delay`:data.connection==='online'?(environments[data.environment]?.link||connectionNames.online):connectionNames[data.connection]}</span></div><div className="top-right"><span className="demo-chip">{apiStatus==='connected'?'Live API':apiStatus==='checking'?'Connectingâ€¦':apiStatus==='missing'?'API URL missing':'API offline'}</span><time>{timeLabel(now)} <small>UTC</small></time><div className="bell-wrap"><NotificationButton count={notif.count} open={reminders} onToggle={()=>setReminders(o=>!o)}/>{reminders&&<NotificationCenter canView={can} model={notif} data={data} onClose={()=>setReminders(false)} onStart={i=>{setReminders(false);openStation(i)}} onSnooze={snoozeReminder} onRestore={restoreReminder} onEnvironment={()=>{setReminders(false);navigate('environment')}}/>}</div><SessionChip access={access} onPick={()=>setPicker(true)} onLock={lockAll}/></div></header>
+ <main className="main-content">
+ {apiStatus==='error'&&<div className="banner warning">The health API could not be reached. Check VITE_API_URL and the backend connection, then reload.</div>}{apiStatus==='missing'&&<div className="banner warning">VITE_API_URL is not configured. Add it to the frontend environment and rebuild.</div>}{storageError&&<div className="banner warning">Browser storage is unavailable. Export this session before closing.</div>}
+ <CrewAlertBanner data={data} operator={operator} onOpen={id=>setEmergency({id})} onResolve={id=>{patchIncident(id,a=>({...a,step:'summary'}));setEmergency({id})}} onAcknowledge={acknowledge}/>
+ {view==='crew'&&!detail&&<CrewOverview now={now} data={data} signals={signals} access={access} onRisk={setRiskSheet} operator={operator} onOpen={openPerson} onMeasure={openStation} onMedical={()=>navigate('medical')} onHistory={openHistory}/>}
+ {view==='crew'&&detail&&!can(detail)&&<LockedPanel person={crew.find(c=>c.id===detail)} onUnlock={()=>openPerson(detail)}/>}
+ {view==='crew'&&detail&&can(detail)&&<HealthProfile now={now} key={detail} person={crew.find(c=>c.id===detail)} data={data} signals={signals[detail]||[]} onRisk={setRiskSheet} onBack={()=>setDetail(null)} onPerson={openPerson} onMeasure={openStation} onLock={lockAll} onReport={id=>setProblem(id)} onEmergency={patient=>openEmergency(patient)} onHistory={openHistory} onAcknowledge={acknowledge} Modal={Modal}/>}
+ {view==='records'&&<History key={(historyPerson||'history')+historyMetric} initialPerson={historyPerson} initialMetric={historyMetric} data={data} onMeasure={openStation} onRisk={setRiskSheet} now={now} canView={can} onUnlock={requestAccess}/>}
+ {view==='environment'&&<Environment onRisk={setRiskSheet} now={now} canView={can} onUnlock={requestAccess}/>}
+ {view==='medical'&&<Medical key={(report?.patient||operator.id)+(report?.body||'')} initial={report} data={data} operator={operator} setData={setData} onSend={sendReport} canView={can} onUnlock={requestAccess}/>}
+ {view==='sources'&&<Sources onRisk={setRiskSheet}/>}
+ <footer className="main-footer"><span><Activity size={13}/>SOMA Â· Health during flight</span><span>Independent NASA Space Apps concept Â· Simulated systems</span></footer></main>
+ {station&&<CheckInStation canView={can} initial={station} operator={operator} data={data} Modal={Modal} onClose={()=>setStation(null)} onSave={saveCheckIn}/>}
+ {emergency&&<Emergency key={emergency.id||emergency.patient||'new'} initialPatient={emergency.patient} incidentId={emergency.id} data={data} signals={signals} onPatch={patchIncident} operator={operator} onClose={()=>setEmergency(null)} onBroadcast={broadcast} onAcknowledge={acknowledge} onUpdate={updateAssessment} onAppend={appendChat} onResolve={resolve} onEarth={emergencyReport} onError={notify}/>}
+ {problem&&<ReportProblem Modal={Modal} person={crew.find(c=>c.id===problem)} connection={data.connection} onClose={()=>setProblem(null)} onSubmit={submitProblem} onEmergency={()=>{const p=problem;setProblem(null);openEmergency(p)}}/>}
+ {pin&&<PinPad person={crew.find(c=>c.id===pin.personId)} Modal={Modal} onAuthenticate={authenticate} onClose={()=>setPin(null)} onEmergency={()=>{const id=pin.personId;setPin(null);openEmergency(id)}} onSuccess={(_scope,result)=>{const {then}=pin;setPin(null);setTimeout(()=>then?.(),0)}}/>}
+ {picker&&<ProfilePicker access={access} Modal={Modal} onClose={()=>setPicker(false)} onChoose={id=>{setPicker(false);openPerson(id)}}/>}
+ {riskSheet&&<RiskSheet riskId={riskSheet} Modal={Modal} onClose={()=>setRiskSheet(null)}/>}
+ {settings&&<SettingsPanel a11y={a11y} setA11y={setA11y} data={data} setData={setData} apiMode={apiConfigured} onClose={()=>setSettings(false)} Modal={Modal}/>}
+ {operatorPicker&&<Modal title="Select the attending crew member" onClose={()=>setOperatorPicker(false)}><p className="muted">The operator records measurements or helps another person. Patient identity is selected separately.</p><div className="operator-list">{crew.map(c=><button key={c.id} onClick={()=>{setData(d=>({...d,operator:c.id}));setOperatorPicker(false);notify('Attending crew member: '+c.name)}}><span className="avatar" style={{'--person':c.color}}>{c.initials}</span><span><b>{c.name}</b><small>{c.role}</small></span>{c.id===operator.id&&<Check size={20}/>}</button>)}</div></Modal>}
+ <AssistantDock data={data} personId={detail||(access.ids.length===1?access.ids[0]:null)} canView={can} onAppend={appendChat} onStation={()=>{const id=detail||access.ids[0];id&&openStation({crewId:id,slot:'daily'})}} onEmergency={()=>openEmergency(detail)} onRisk={setRiskSheet} onUnlock={id=>requestAccess(id)}/>
+ {toast&&<div className="toast" role="status"><CheckCircle2 size={18}/>{toast}<button aria-label="Dismiss notification" onClick={()=>setToast('')}><X size={16}/></button></div>}
+ </div>;
 }
 
-const INDICATOR_TO_ITEM = { heart_rate: 'heart_rate', bp_systolic: 'blood_pressure', bp_diastolic: 'blood_pressure', blood_sugar: 'blood_sugar', temperature: 'temperature', sleep_hours: 'sleep_hours', mood: 'mood', fatigue: 'fatigue', exercise_min: 'exercise_min' };
-
-function PageHeading({ eyebrow, title, subtitle, actions }) { return <div className="page-heading"><div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p className="page-subtitle">{subtitle}</p></div>{actions && <div className="page-actions">{actions}</div>}</div>; }
-
-function Modal({ title, onClose, children, wide = false }) {
-  const container = useRef(); const close = useRef(onClose); close.current = onClose;
-  useEffect(() => { const prev = document.activeElement; const el = container.current; el?.focus(); const fn = e => { if (e.key === 'Escape') close.current(); if (e.key === 'Tab') { const items = el.querySelectorAll('button:not(:disabled),a[href],input,select,textarea,[tabindex="0"]'); const first = items[0], last = items[items.length - 1]; if (e.shiftKey && (document.activeElement === first || document.activeElement === el)) { e.preventDefault(); last?.focus(); } else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); } } }; document.addEventListener('keydown', fn); const overflow = document.body.style.overflow; document.body.style.overflow = 'hidden'; return () => { document.removeEventListener('keydown', fn); document.body.style.overflow = overflow; prev?.focus(); }; }, []);
-  return <div className="modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}><section className={'modal ' + (wide ? 'wide' : '')} role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} ref={container}><div className="modal-heading"><span>{title}</span><button className="icon-button" aria-label="Close window" onClick={onClose}><X size={20} /></button></div>{children}</section></div>;
+function Modal({title,onClose,children,wide=false}){
+ const container=useRef(),close=useRef(onClose);close.current=onClose;
+ useEffect(()=>{const previous=document.activeElement,element=container.current;const otherDialogs=Array.from(document.querySelectorAll('[role="dialog"]')).filter(e=>e!==element);element?.focus();const onKey=e=>{if(document.querySelectorAll('[role="dialog"]').length>1&&Array.from(document.querySelectorAll('[role="dialog"]')).at(-1)!==element)return;if(e.key==='Escape'){e.stopPropagation();close.current()}if(e.key==='Tab'){const items=element.querySelectorAll('button:not(:disabled),a[href],input:not(:disabled),select,textarea,[tabindex="0"]');const first=items[0],last=items[items.length-1];if(e.shiftKey&&(document.activeElement===first||document.activeElement===element)){e.preventDefault();last?.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus()}}};document.addEventListener('keydown',onKey);const overflow=document.body.style.overflow;document.body.style.overflow='hidden';return()=>{document.removeEventListener('keydown',onKey);document.body.style.overflow=overflow;previous?.focus()}},[]);
+ return <div className="modal-backdrop"><section className={'modal '+(wide?'wide':'')} role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} ref={container}><div className="modal-heading"><span>{title}</span><button className="icon-button" aria-label="Close dialog" onClick={onClose}><X size={20}/></button></div>{children}</section></div>;
 }
+createRoot(document.getElementById('root')).render(<App/>);
 
-function SourceChip({ id }) {
-  const s = SOURCES[id]; if (!s) return null;
-  const inner = <><span className="chip-agency">{s.agency}</span>{s.title}{s.url && <ExternalLink size={12} />}</>;
-  return s.url ? <a className="source-chip" href={s.url} target="_blank" rel="noreferrer">{inner}</a> : <span className="source-chip plain">{inner}</span>;
-}
-
-function AlertCard({ alert, acked, onAck }) {
-  const [done, setDone] = useState({});
-  const ind = INDICATORS[alert.indicator];
-  const Icon = alert.level === 'red' ? AlertTriangle : Eye;
-  return <article className={'alert-card ' + alert.level + (acked ? ' acked' : '')}>
-    <header><span className={'level-tag ' + alert.level}><Icon size={14} />{alert.level === 'red' ? 'Act' : 'Watch'}</span><h3>{alert.title}</h3>{alert.value != null && ind && <span className="alert-value">{fmtVal(alert.value)} <small>{ind.unit}</small></span>}</header>
-    <p className="alert-msg">{alert.message}</p>
-    {!acked && <><ul className="alert-actions">{alert.actions.map((a, i) => <li key={a}><label className={done[i] ? 'completed' : ''}><input type="checkbox" checked={!!done[i]} onChange={e => setDone(d => ({ ...d, [i]: e.target.checked }))} /><span>{a}</span></label></li>)}</ul>
-      <div className="who-row"><b>Who should act</b>{alert.who.map(w => <span className="who" key={w}>{WHO[w]}</span>)}</div></>}
-    <footer><div className="why-row"><span className="rule-id">Rule {alert.ruleId} v{alert.version}</span><SourceChip id={alert.source} /></div><p className="notice">Illustrative threshold · Not a diagnosis</p>
-      <div className="alert-buttons">{acked ? <span className="pill">Acknowledged</span> : <button className="button primary" onClick={() => onAck(alert)}><Check size={16} />Got it</button>}</div></footer>
-  </article>;
-}
-
-function Trend({ series, metric, period }) {
-  const from = Math.max(1, MISSION_DAY - period);
-  const chartData = (series || []).filter(p => p.day >= from);
-  const id = `trend-${metric}`;
-  return <div className="trend-chart">{chartData.length >= 2 ? <ResponsiveContainer width="100%" height="100%"><AreaChart data={chartData} margin={{ top: 18, right: 18, left: -20, bottom: 0 }}><defs><linearGradient id={id} x1="0" y1="0" x2="0" y2="1"><stop stopColor="#65c9df" stopOpacity=".25" /><stop offset="1" stopColor="#65c9df" stopOpacity="0" /></linearGradient></defs><CartesianGrid stroke="#243041" strokeDasharray="3 6" vertical={false} /><XAxis dataKey="day" type="number" domain={[from, MISSION_DAY]} tickFormatter={d => 'D' + d} stroke="#718197" tick={{ fontSize: 11 }} minTickGap={30} axisLine={false} tickLine={false} allowDecimals={false} /><YAxis domain={['auto', 'auto']} tick={{ fontSize: 11 }} stroke="#718197" axisLine={false} tickLine={false} /><Tooltip labelFormatter={d => `Day ${d}`} formatter={v => [`${fmtVal(v)} ${INDICATORS[metric].unit}`, INDICATORS[metric].short]} contentStyle={{ background: '#142031', border: '1px solid #3d536d', borderRadius: 6, color: '#e9f0f5' }} /><Area type="monotone" dataKey="value" stroke="#70d2e6" strokeWidth={2} fill={`url(#${id})`} isAnimationActive={false} /></AreaChart></ResponsiveContainer> : <div className="empty-state"><Activity /><p>Not enough data in this period.</p></div>}</div>;
-}
-
-function PersonDetail({ person, eng, data, metric, setMetric, period, setPeriod, onMeasure, onAck }) {
-  const [tab, setTab] = useState('overview');
-  const info = INDICATORS[metric]; const guide = GUIDES[info.guide]; const Icon = iconFor[metric];
-  const series = eng.series[person.id]?.[metric] || []; const last = series[series.length - 1];
-  const base = eng.baselines[person.id][metric];
-  const verdict = last ? vsBaseline(metric, last.value, base, info.max <= 5) : null;
-  const alerts = eng.alerts[person.id];
-  return <><div className="person-title"><span className="avatar large" style={{ '--person': person.color }}>{person.initials}</span><div><h2>{person.name}</h2><p>{person.role}</p></div><span className="demo-label">Private · only you</span></div>
-    {alerts.length > 0 && <div className="detail-alerts"><h3 className="sys-h">Active alerts</h3>{alerts.map(a => <AlertCard key={a.key} alert={a} acked={!!data.ack[a.key]} onAck={onAck} />)}</div>}
-    <div className="tabs"><button className={tab === 'overview' ? 'active' : ''} onClick={() => setTab('overview')}>Status and trend</button><button className={tab === 'info' ? 'active' : ''} onClick={() => setTab('info')}>How to measure it</button></div>
-    <div className="person-content"><div className="detail-body"><Body uid={'detail-' + person.id} alert={eng.status[person.id].overall !== 'green'} active={metric} onSelect={setMetric} /><span className="muted small">Select a body marker</span></div>
-      <div className="detail-main"><div className="metric-tabs">{Object.entries(INDICATORS).map(([key, m]) => <button className={key === metric ? 'active' : ''} key={key} onClick={() => setMetric(key)}>{m.short}</button>)}</div>
-        <div className="detail-reading"><div><p><Icon size={17} />{info.label}</p><strong>{last ? fmtVal(last.value) : '—'}<small>{info.unit}</small></strong></div>{verdict && <span className={'vs ' + verdict}>{verdict === 'normal' ? 'Normal for you' : verdict === 'higher' ? 'Higher than usual' : 'Lower than usual'}</span>}</div>
-        {tab === 'overview' ? <><div className="chart-toolbar"><span>Reading history</span><div className="segmented">{[7, 30, 180].map(d => <button className={period === d ? 'active' : ''} key={d} onClick={() => setPeriod(d)}>{d} days</button>)}</div></div><Trend series={series} metric={metric} period={period} /><div className="reading-note"><Activity size={18} /><div><b>{last ? `Last record · day ${last.day} · ${last.source}` : 'No data yet'}</b><p>{base && last ? `Your average is ${fmtVal(base.mean)} ${info.unit}.` : 'Log a measurement to start your history.'}</p></div></div></>
-          : <div className="info-copy" key={metric}><h3>How to measure</h3><ol className="guide-steps">{guide.steps.map((s, i) => <li key={s}><span>{i + 1}</span>{s}</li>)}</ol><h3>Why it matters in space</h3><p>{guide.why}</p><h3>Typical range <span className="tag">Illustrative, for demo</span></h3><p>{guide.range}</p><h3>If it looks abnormal</h3><ul>{guide.abnormal.map(a => <li key={a}>{a}</li>)}</ul><div className="chip-row"><SourceChip id={guide.source} /></div></div>}
-        <div className="detail-actions"><button className="button primary" onClick={onMeasure}><Plus size={17} />Log {info.short.toLowerCase()}</button></div></div></div></>;
-}
-
-function Measurement({ initial, operator, eng, onClose, onSave }) {
-  const [step, setStep] = useState(0), [who, setWho] = useState(initial.crewId), [itemId, setItemId] = useState(initial.item || 'heart_rate'), [vals, setVals] = useState({}), [error, setError] = useState(''), [saved, setSaved] = useState(null);
-  const item = LOG_ITEMS.find(i => i.id === itemId) || LOG_ITEMS[0]; const guide = GUIDES[item.guide]; const person = CREW.find(c => c.id === who);
-  const submit = e => {
-    e.preventDefault();
-    const recs = [];
-    for (const f of item.fields) {
-      const def = INDICATORS[f]; const n = Number(vals[f]);
-      if (vals[f] == null || vals[f] === '' || !Number.isFinite(n) || n < def.min || n > def.max || (def.max <= 5 && !Number.isInteger(n))) { setError(`${def.label}: enter a value between ${def.min} and ${def.max} ${def.unit}.`); return; }
-      recs.push(makeRecord(who, f, n, def.unit, { operator: operator.id }));
-    }
-    if (item.id === 'blood_pressure' && Number(vals.bp_diastolic) >= Number(vals.bp_systolic)) { setError('Systolic (top) should be higher than diastolic (bottom).'); return; }
-    onSave(recs);
-    setSaved(recs.map(r => ({ indicator: r.indicator, value: r.value, verdict: vsBaseline(r.indicator, r.value, eng.baselines[who][r.indicator], INDICATORS[r.indicator].max <= 5) })));
-  };
-  return <Modal title={saved ? 'Measurement logged' : 'Log measurement'} onClose={onClose}>{saved ? <div className="success-state"><span className="success-icon"><CheckCheck size={34} /></span><h2>Record saved.</h2><p>{person.name}</p>{saved.map(s => <p key={s.indicator}><b>{INDICATORS[s.indicator].label}</b> {fmtVal(s.value)} {INDICATORS[s.indicator].unit} · <span className={'vs ' + s.verdict}>{s.verdict === 'normal' ? 'Normal for you' : s.verdict === 'higher' ? 'Higher than usual' : 'Lower than usual'}</span></p>)}<button className="button primary" onClick={onClose}>Back to the monitor</button></div> : <><div className="step-progress"><span className={step === 0 ? 'active' : 'done'}>1 · Prepare</span><div /><span className={step === 1 ? 'active' : ''}>2 · Record</span></div>
-    {step === 0 ? <><h2 className="modal-title">A reading with context.</h2><div className="form-grid"><label>Person being assessed<select value={who} onChange={e => setWho(e.target.value)}>{CREW.map(c => <option value={c.id} key={c.id}>{c.name}</option>)}</select></label><label>Indicator<select value={itemId} onChange={e => { setItemId(e.target.value); setVals({}); setError(''); }}>{LOG_ITEMS.map(i => <option key={i.id} value={i.id}>{i.label}</option>)}</select></label></div><ol className="guide-steps">{guide.steps.map((s, i) => <li key={s}><span>{i + 1}</span>{s}</li>)}</ol><div className="source-note"><BookOpen size={16} /><span>General guide. Follow your instrument's manual and the mission procedure. Typical range: {guide.range}</span></div><button className="button primary full" onClick={() => setStep(1)}>Continue to recording<ChevronRight size={17} /></button></>
-      : <form onSubmit={submit}><button type="button" className="text-button" onClick={() => setStep(0)}><ArrowLeft size={15} />Change indicator</button><h2 className="modal-title">{item.label}</h2><p className="muted">Patient {person.name} · Logged by {operator.name}</p>{item.fields.map(f => <label className="value-field" key={f}>{INDICATORS[f].label}<div><input type="number" inputMode="decimal" autoFocus={f === item.fields[0]} min={INDICATORS[f].min} max={INDICATORS[f].max} step={INDICATORS[f].step} value={vals[f] ?? ''} onChange={e => { setVals(v => ({ ...v, [f]: e.target.value })); setError(''); }} placeholder="—" required /><span>{INDICATORS[f].unit}</span></div></label>)}{error && <p role="alert" className="error-text">{error}</p>}<button className="button primary full"><Check size={17} />Save to history</button></form>}</>}</Modal>;
-}
-
-const FACES = ['😞', '🙁', '😐', '🙂', '😄'];
-const FACE_LABEL = ['Very low', 'Low', 'Okay', 'Good', 'Very good'];
-const FATIGUE_LABEL = ['Fresh', 'A little tired', 'Tired', 'Very tired', 'Exhausted'];
-const VERDICT_TEXT = { normal: 'Normal for you', higher: 'Higher than usual', lower: 'Lower than usual' };
-
-// Guided check-in: walks through every measurement, one after another. Can be done several times a day;
-// sleep is only asked once a day.
-function CheckIn({ operator, data, eng, onClose, onSave, onFinish, onProfile }) {
-  const hasSleep = useRef(data.records.some(r => r.astroId === operator.id && r.day === MISSION_DAY && r.indicator === 'sleep_hours')).current;
-  const steps = useMemo(() => CHECKIN_ORDER.filter(id => !(id === 'sleep_hours' && hasSleep)).map(id => LOG_ITEMS.find(i => i.id === id)), [hasSleep]);
-  const [idx, setIdx] = useState(0), [vals, setVals] = useState({ sleep_hours: 7 }), [error, setError] = useState(''), [results, setResults] = useState([]), [skipped, setSkipped] = useState([]), [done, setDone] = useState(false);
-  const item = steps[idx]; const guide = item && GUIDES[item.guide];
-  const advance = () => { if (idx + 1 >= steps.length) { onFinish(); setDone(true); } else { setIdx(idx + 1); setError(''); } };
-  const next = () => {
-    const recs = [];
-    for (const f of item.fields) {
-      const def = INDICATORS[f]; const n = Number(vals[f]);
-      if (vals[f] == null || vals[f] === '' || !Number.isFinite(n) || n < def.min || n > def.max || (def.max <= 5 && !Number.isInteger(n))) { setError(def.max <= 5 ? `Choose a value from ${def.min} to ${def.max}.` : `${def.label}: enter a value between ${def.min} and ${def.max} ${def.unit}.`); return; }
-      recs.push(makeRecord(operator.id, f, n, def.unit, { operator: operator.id }));
-    }
-    if (item.id === 'blood_pressure' && Number(vals.bp_diastolic) >= Number(vals.bp_systolic)) { setError('Systolic (top) should be higher than diastolic (bottom).'); return; }
-    onSave(recs, { silent: true });
-    setResults(r => [...r, ...recs.map(x => ({ indicator: x.indicator, value: x.value, verdict: vsBaseline(x.indicator, x.value, eng.baselines[operator.id][x.indicator], INDICATORS[x.indicator].max <= 5) }))]);
-    advance();
-  };
-  const skip = () => { setSkipped(s => [...s, item.label]); advance(); };
-  const alertsNow = eng.alerts[operator.id].filter(a => a.ruleId !== 'X-01').length;
-  if (done) {
-    const shown = Object.values(Object.fromEntries(results.map(r => [r.indicator, r])));
-    return <Modal title="Check-in complete" onClose={onClose}><div className="ci-summary"><span className="success-icon"><CheckCheck size={34} /></span><h2>Check-in saved.</h2>
-      <ul>{shown.map(s => <li key={s.indicator}><span><b>{INDICATORS[s.indicator].label}</b> {fmtVal(s.value)} {INDICATORS[s.indicator].unit}</span><span className={'vs ' + s.verdict}>{VERDICT_TEXT[s.verdict]}</span></li>)}</ul>
-      {skipped.length > 0 && <p className="small muted">Skipped: {skipped.join(', ')}.</p>}
-      <p className="muted">{alertsNow > 0 ? `You have ${alertsNow} active alert${alertsNow > 1 ? 's' : ''} in your private profile.` : 'No active alerts.'}</p>
-      <div className="ci-actions"><button className="button subtle" onClick={onProfile}>Open my profile</button><button className="button primary" onClick={onClose}>Done</button></div></div></Modal>;
-  }
-  const set = (f, v) => { setVals(x => ({ ...x, [f]: v })); setError(''); };
-  return <Modal title={`Check-in · step ${idx + 1} of ${steps.length}`} onClose={onClose}>
-    <div className="ci-progress" role="progressbar" aria-valuemin={1} aria-valuemax={steps.length} aria-valuenow={idx + 1}>{steps.map((s, i) => <span key={s.id} className={i < idx ? 'done' : i === idx ? 'on' : ''} />)}</div>
-    {idx === 0 && hasSleep && <p className="small muted">Sleep was already logged today, so it is skipped.</p>}
-    <h2 className="modal-title">{item.label}</h2>
-    {item.id === 'sleep_hours' && <div className="slider-row"><input type="range" min="0" max="12" step="0.5" value={vals.sleep_hours} onChange={e => set('sleep_hours', e.target.value)} aria-label="Hours of sleep last night" /><strong>{Number(vals.sleep_hours).toFixed(1)} <small>h</small></strong></div>}
-    {item.id === 'mood' && <div className="faces">{FACES.map((f, i) => <button key={f} type="button" className={'face' + (Number(vals.mood) === i + 1 ? ' on' : '')} onClick={() => set('mood', i + 1)} aria-pressed={Number(vals.mood) === i + 1} aria-label={`${i + 1} of 5, ${FACE_LABEL[i]}`}><span>{f}</span><small>{FACE_LABEL[i]}</small></button>)}</div>}
-    {item.id === 'fatigue' && <div className="scale">{[1, 2, 3, 4, 5].map(n => <button key={n} type="button" className={'scale-btn' + (Number(vals.fatigue) === n ? ' on' : '')} onClick={() => set('fatigue', n)} aria-pressed={Number(vals.fatigue) === n}><strong>{n}</strong><small>{FATIGUE_LABEL[n - 1]}</small></button>)}</div>}
-    {!['sleep_hours', 'mood', 'fatigue'].includes(item.id) && <div className="measure-fields">{item.fields.map(f => <label className="value-field" key={f}>{INDICATORS[f].label}<div><input type="number" inputMode="decimal" autoFocus={f === item.fields[0]} min={INDICATORS[f].min} max={INDICATORS[f].max} step={INDICATORS[f].step} value={vals[f] ?? ''} onChange={e => set(f, e.target.value)} placeholder="—" onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); next(); } }} /><span>{INDICATORS[f].unit}</span></div></label>)}</div>}
-    {error && <p role="alert" className="error-text">{error}</p>}
-    <details className="ci-help"><summary>How do I measure this?</summary><ol className="guide-steps">{guide.steps.map((s, i) => <li key={s}><span>{i + 1}</span>{s}</li>)}</ol><p className="small muted">Typical range: {guide.range}</p></details>
-    <div className="ci-actions">
-      <button type="button" className="text-button" disabled={idx === 0} onClick={() => { setIdx(idx - 1); setError(''); }}><ArrowLeft size={15} />Back</button>
-      <button type="button" className="button subtle" onClick={skip}>Skip</button>
-      <button type="button" className="button primary" onClick={next}>{idx + 1 >= steps.length ? 'Finish' : 'Save and next'}<ChevronRight size={17} /></button>
-    </div>
-  </Modal>;
-}
-
-function Records({ data, operator }) {
-  const [metric, setMetric] = useState('all'), [query, setQuery] = useState(''), [page, setPage] = useState(0);
-  const records = data.records.filter(r => r.astroId === operator.id && (metric === 'all' || r.indicator === metric) && (!query || (INDICATORS[r.indicator].label + ' ' + (r.note || '')).toLowerCase().includes(query.toLowerCase()))).sort((a, b) => b.ts - a.ts);
-  const exportCsv = () => { const cell = s => '"' + String(s ?? '').replaceAll('"', '""') + '"'; const rows = [['Indicator', 'Value', 'Unit', 'Day', 'Date', 'Source'], ...records.map(r => [INDICATORS[r.indicator].label, r.value, r.unit, r.day, new Date(r.ts).toISOString(), r.source])]; downloadFile('SOMA-records.csv', '﻿' + rows.map(row => row.map(cell).join(',')).join('\r\n'), 'text/csv;charset=utf-8'); };
-  return <><PageHeading eyebrow="Your private records" title="Every reading counts." subtitle="Browse, filter and export your own readings. Only you can see them." actions={<button className="button subtle" onClick={exportCsv}><Download size={17} />Export CSV</button>} />
-    <div className="records-filters"><label className="search-field"><Search size={17} /><input aria-label="Search records" placeholder="Search indicator" value={query} onChange={e => { setQuery(e.target.value); setPage(0); }} /></label><select aria-label="Filter by indicator" value={metric} onChange={e => { setMetric(e.target.value); setPage(0); }}><option value="all">All indicators</option>{Object.entries(INDICATORS).map(([k, m]) => <option value={k} key={k}>{m.short}</option>)}</select></div>
-    <div className="panel records-table"><table><thead><tr><th>Indicator</th><th>Reading</th><th>Mission day</th><th>Logged</th><th>Source</th></tr></thead><tbody>{records.slice(page * 12, page * 12 + 12).map(r => <tr key={r.id}><td>{INDICATORS[r.indicator].label}</td><td><strong>{fmtVal(r.value)}</strong> <span className="muted">{r.unit}</span></td><td>Day {r.day}</td><td>{fmtDate(new Date(r.ts))} · {fmtTime(r.ts)}</td><td><span>{r.source}</span></td></tr>)}</tbody></table>{records.length === 0 && <div className="empty-state"><Search size={30} /><h3>No records for these filters</h3><button className="button subtle" onClick={() => { setMetric('all'); setQuery(''); setPage(0); }}>Reset filters</button></div>}<div className="table-footer"><span>{records.length} records</span><div><button className="button subtle" disabled={page === 0} onClick={() => setPage(p => p - 1)}>Previous</button><span>{page + 1} / {Math.max(1, Math.ceil(records.length / 12))}</span><button className="button subtle" disabled={(page + 1) * 12 >= records.length} onClick={() => setPage(p => p + 1)}>Next</button></div></div></div></>;
-}
-
-function Emergency({ eng, operator, onClose, setData, initialPatient }) {
-  const [patient, setPatient] = useState(initialPatient || 'unknown'), [situation, setSituation] = useState(''), [checks, setChecks] = useState({}), [note, setNote] = useState(''), [summary, setSummary] = useState(null), [closing, setClosing] = useState(false), [copied, setCopied] = useState(false);
-  const startedAt = useRef(Date.now()).current;
-  const steps = ['Alert the medical officer and ask the crew for help.', 'Identify the situation using the mission medical procedure.', 'Prepare the equipment the medical officer requests.', 'Record observations and prepare the summary for ground.'];
-  const person = CREW.find(c => c.id === patient);
-  const saveLog = () => { setData(d => ({ ...d, emergencyLogs: [{ id: uid(), startedAt, time: Date.now(), patientId: person ? person.id : null, situation, note, checks, operator: operator.id }, ...d.emergencyLogs] })); onClose(); };
-  const build = () => {
-    const L = ['EMERGENCY SUMMARY (illustrative · simulated data)', `Patient: ${person?.name || 'Not identified'}`, `Reported by: ${operator.name}`, `Situation: ${situation || 'Unclassified'}`, `Started: ${fmtTime(startedAt)}`, `Observations: ${note || 'Pending'}`, `Actions logged: ${steps.filter((_, i) => checks[i]).join(' ') || 'Pending'}`];
-    if (person) { L.push('', 'Last recorded values (simulated):'); ['heart_rate', 'bp_systolic', 'bp_diastolic', 'temperature'].forEach(k => { const l = latestOf(eng.series, person.id, k); if (l) L.push(`  ${INDICATORS[k].label}: ${fmtVal(l.value)} ${INDICATORS[k].unit} (day ${l.day})`); }); const al = eng.alerts[person.id].filter(a => a.ruleId !== 'X-01'); if (al.length) L.push('Active alerts: ' + al.map(a => `${a.ruleId} ${a.title}`).join('; ')); }
-    L.push('', 'Follow your mission medical procedures. This does not replace the flight surgeon.');
-    return L.join('\n');
-  };
-  const copy = async () => { try { await navigator.clipboard.writeText(summary); } catch { /* clipboard unavailable */ } setCopied(true); setTimeout(() => setCopied(false), 2000); };
-  return <Modal title="Emergency assistance · Demo scenario" onClose={() => setClosing(true)} wide><div className="emergency-content"><div className="emergency-title"><span><Plus size={25} /></span><div><h2>Help a crewmate.</h2><p>Operator {operator.name} · No PIN needed in an emergency.</p></div></div>{closing ? <div className="close-confirm"><h3>End this assistance session</h3><p>The patient, observations and checked actions will be saved to the emergency log.</p><button className="button primary" onClick={saveLog}>Save and end</button><button className="button subtle" onClick={() => setClosing(false)}>Continue assistance</button></div> : <><div className="emergency-columns"><div><label>Person being assisted<select value={patient} onChange={e => { setPatient(e.target.value); setSummary(null); }}><option value="unknown">Not identified yet</option>{CREW.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label><label>Observed situation<select value={situation} onChange={e => { setSituation(e.target.value); setSummary(null); }}><option value="">Select situation</option>{['Chest pain', 'Unconscious / collapsed', 'Breathing problem', 'Bleeding / injury', 'Other'].map(s => <option key={s}>{s}</option>)}</select></label><label>Notes<textarea placeholder="Symptom onset, changes and actions taken" value={note} onChange={e => { setNote(e.target.value); setSummary(null); }} rows={4} /></label></div><div><h3>On-board coordination</h3><p className="muted">Check each action once it has been done.</p><div className="checklist">{steps.map((s, i) => <label key={s} className={checks[i] ? 'completed' : ''}><input type="checkbox" checked={!!checks[i]} onChange={e => setChecks(c => ({ ...c, [i]: e.target.checked }))} /><span>{s}</span></label>)}</div><div className="protocol-notice"><BookOpen size={20} /><div><b>Follow your mission medical procedures</b><p>This guide does not replace the flight surgeon. Steps are generic and illustrative.</p></div></div></div></div>
-    <div className="emergency-send"><button className="button danger" onClick={() => setSummary(build())}>Prepare ground summary</button></div>
-    {summary && <><pre className="em-summary">{summary}</pre><div className="emergency-send"><button className="button subtle" onClick={copy}>{copied ? <Check size={17} /> : <Copy size={17} />}{copied ? 'Copied' : 'Copy summary'}</button><button className="button primary" onClick={saveLog}>Save log and finish</button></div></>}</>}</div></Modal>;
-}
-
-function SettingsModal({ data, setData, onClose, notify }) {
-  const [confirm, setConfirm] = useState(false);
-  return <Modal title="Demo settings" onClose={onClose}><h2 className="modal-title">Settings.</h2><div className="settings-actions"><button className="button subtle full" onClick={() => { downloadFile('SOMA-session.json', JSON.stringify(data, null, 2)); notify('Session exported'); }}><Download size={17} />Download session data</button>{confirm ? <div className="reset-confirm"><p>Everything you logged in this browser will be deleted and the simulated mission rebuilt.</p><button className="button danger" onClick={() => { setData(freshState()); notify('Demo data reset'); onClose(); }}>Reset demo data</button><button className="button subtle" onClick={() => setConfirm(false)}>Cancel</button></div> : <button className="text-button" onClick={() => setConfirm(true)}><RotateCcw size={15} />Reset demo data</button>}</div><p className="small muted">All data is synthetic and stored only in this browser.</p></Modal>;
-}
-
-function Sources() {
-  return <><PageHeading eyebrow="Flight library" title="Understand to act." subtitle="The scientific context behind health monitoring." />
-    <div className="hazards-grid">{[['Radiation', 'Exposure to energetic particles beyond Earth\'s protection.'], ['Isolation & confinement', 'Confinement and living together in a demanding environment.'], ['Distance from Earth', 'Communication delays and the need for autonomy.'], ['Gravity fields', 'Cardiovascular, muscular and bone adaptations.'], ['Hostile / closed environment', 'Air quality, noise, light and limited resources.']].map(([title, text], i) => <article className="panel hazard" key={title}><span>{['☀', '◌', '↗', '◎', '⌂'][i]}</span><h3>{title}</h3><p>{text}</p></article>)}</div>
-    <section className="panel sources-list"><div className="section-heading"><h3>Reference documentation</h3><BookOpen size={18} /></div>{Object.entries(SOURCES).filter(([, s]) => s.url).map(([id, s]) => <a href={s.url} key={id} target="_blank" rel="noreferrer"><div><h4>{s.title}</h4><p>{s.agency}</p></div><ExternalLink size={17} /></a>)}</section>
-    <div className="panel scope-note"><h3>About this version</h3><p>SOMA is an interface demonstration for NASA Space Apps. It uses synthetic data, a local rule engine with illustrative thresholds, and manual logging. Operator selection is a demo shortcut. A clinical deployment would require real authentication, medical permissions, sensors and validated protocols.</p></div></>;
-}
-
-createRoot(document.getElementById('root')).render(<App />);

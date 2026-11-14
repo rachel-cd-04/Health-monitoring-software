@@ -1,4 +1,4 @@
-import { DAY, MISSION_DAY, generate } from './sim';
+import { DAY, MISSION_DAY, generate } from './sim.js';
 
 const KEY = 'soma-v3';
 
