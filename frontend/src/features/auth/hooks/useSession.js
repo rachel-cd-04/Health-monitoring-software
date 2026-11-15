@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { crew } from '../../crew/models/crewModel.js';
-import { LOCKED, canView, isExpired, isUnlocked } from '../models/access.js';
+import { LOCKED, canView, isExpired, isUnlocked, keepIncidentThreads } from '../models/access.js';
 import { api, apiConfigured, setApiToken } from '../../../shared/api/apiClient.js';
 import { queryClient } from '../../../app/queryClient.js';
 import { crewStatusKey, fetchCrewStatus } from '../../crew/hooks/crewQueries.js';
@@ -161,6 +161,9 @@ async function loadPersonData(personId, profile) {
 export function useSession({ now, profileFor, setData, setPrivateApiSignals, setDetail, notify }) {
   const [access, setAccess] = useState(LOCKED);
   const [pin, setPin] = useState(null);
+  /** End of a private session: drop every assistant conversation except the emergency ones. */
+  const clearPrivateChats = () =>
+    setData((data) => ({ ...data, chatThreads: keepIncidentThreads(data.chatThreads) }));
   const authenticate = async (personId, code) => {
     if (!apiConfigured) throw new Error('The health API is not configured.');
     const profile = profileFor(personId);
@@ -169,6 +172,7 @@ export function useSession({ now, profileFor, setData, setPrivateApiSignals, set
     setApiToken('');
     setAccess(LOCKED);
     setDetail(null);
+    clearPrivateChats(); // a new sign-in never inherits the previous person's conversations
     const session = await api('/api/auth/login', {
       method: 'POST',
       auth: false,
@@ -235,7 +239,8 @@ export function useSession({ now, profileFor, setData, setPrivateApiSignals, set
     setAccess(LOCKED);
     setApiToken('');
     setDetail(null);
-    notify('Private data locked.');
+    clearPrivateChats();
+    notify('Private data locked. Assistant conversations were cleared.');
   };
 
   useEffect(() => {
@@ -243,8 +248,10 @@ export function useSession({ now, profileFor, setData, setPrivateApiSignals, set
       setAccess(LOCKED);
       setApiToken('');
       setDetail(null);
-      notify('Locked after 5 minutes without activity.');
+      clearPrivateChats();
+      notify('Locked after 5 minutes without activity. Assistant conversations were cleared.');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [access, now, notify, setDetail]);
 
   useEffect(() => {

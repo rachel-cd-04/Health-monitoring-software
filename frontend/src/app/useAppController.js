@@ -6,6 +6,7 @@ import { applyA11y, readA11y } from '../features/support/models/accessibility.js
 import { apiConfigured } from '../shared/api/apiClient.js';
 import { queryClient } from './queryClient.js';
 import { useSession } from '../features/auth/hooks/useSession.js';
+import { expireGeneralThread } from '../features/auth/models/access.js';
 import { useCrewBootstrap } from '../features/crew/hooks/useCrewBootstrap.js';
 import { crewHistoryKey, fetchCrewHistory } from '../features/crew/hooks/crewQueries.js';
 import { useCreateCheckin } from '../features/checkins/hooks/useCreateCheckin.js';
@@ -305,6 +306,14 @@ export function useAppController() {
     crew,
     persistCheckIn: checkinMutation.mutateAsync,
   });
+  // The general (no-PIN) assistant thread expires after 5 minutes without new messages, so the next
+  // person at the shared screen doesn't see it.
+  useEffect(() => {
+    setData((d) => {
+      const chatThreads = expireGeneralThread(d.chatThreads, now);
+      return chatThreads === d.chatThreads ? d : { ...d, chatThreads };
+    });
+  }, [now]);
   const appendChat = (key, message) =>
     setData((d) => ({
       ...d,
