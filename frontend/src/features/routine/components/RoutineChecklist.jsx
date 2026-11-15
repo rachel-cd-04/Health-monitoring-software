@@ -1,22 +1,14 @@
 import React from 'react';
-import { CalendarCheck, CircleAlert, LoaderCircle } from 'lucide-react';
+import { CalendarCheck, CircleAlert } from 'lucide-react';
 import { useRoutine } from '../hooks/useRoutine.js';
 
-export default function RoutineChecklist({ astronautId }) {
-  const {
-    data = [],
-    error,
-    updateError,
-    isPending,
-    updateItem,
-    isUpdating,
-  } = useRoutine(astronautId);
+export default function RoutineChecklist({ astronautId, crewId, environment, onStart }) {
+  const { data = [], error, isPending } = useRoutine(astronautId, environment);
 
   return (
     <section className="panel routine-panel" aria-labelledby="routine-heading">
       <div className="section-heading">
         <h3 id="routine-heading">Mission routine</h3>
-        {isUpdating && <LoaderCircle size={16} aria-label="Saving routine" />}
       </div>
       {isPending ? (
         <p className="routine-message">Loading routine…</p>
@@ -28,13 +20,7 @@ export default function RoutineChecklist({ astronautId }) {
         <ul className="routine-list">
           {data.map((item) => (
             <li key={item.id} className={item.overdue ? 'overdue' : ''}>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={item.done}
-                  disabled={isUpdating}
-                  onChange={(event) => updateItem({ itemId: item.id, done: event.target.checked })}
-                />
+              <div className="routine-item-content">
                 <span>
                   <b>{item.item}</b>
                   <small>
@@ -48,18 +34,23 @@ export default function RoutineChecklist({ astronautId }) {
                     UTC
                   </small>
                 </span>
-              </label>
-              <CalendarCheck size={17} aria-hidden="true" />
+                {item.done ? (
+                  <span className="routine-complete">Completed today</span>
+                ) : (
+                  <button
+                    className="button primary small"
+                    onClick={() => onStart(item.item, crewId)}
+                  >
+                    Start
+                  </button>
+                )}
+              </div>
+              {!item.done && <CalendarCheck size={17} aria-hidden="true" />}
             </li>
           ))}
         </ul>
       ) : (
         <p className="routine-message">No routine items are assigned.</p>
-      )}
-      {updateError && (
-        <p className="routine-message warning" role="alert">
-          <CircleAlert size={16} /> Could not update this routine item: {updateError.message}
-        </p>
       )}
     </section>
   );

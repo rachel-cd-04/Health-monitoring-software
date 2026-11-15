@@ -79,7 +79,7 @@ This is a code-level inventory, not acceptance-test sign-off. The boxes in `task
 | F5 Emergency | Present | Public backend lifecycle endpoints, context and UI flow exist; manual scenario, timestamps and privacy checks remain. |
 | F6 Trends | Present in part | History charts and backend history endpoint exist; current UI derives parts of baseline/alerts locally instead of consuming all backend fields. |
 | F7 Mission simulator | Not implemented | The specified 4-person, 180-day dataset and scripted day-90 incident are not present; task T10 is open. |
-| F8 Routine | Present | Private read/update endpoints and a checklist are wired; reminder timing/environment acceptance remains unverified. |
+| F8 Routine | Present | Missing daily tasks are provisioned idempotently on routine read; UTC schedules adapt to station/transit; notifications open the matching entry flow. |
 | F9 Assistant | Present | Optional-auth chat and frontend adapter exist; source quality, privacy boundaries and failure behavior need the manual checks in `verification.md`. |
 | F10 Crew view | Present | Public overview and commander-only alerts are implemented and called by the UI; confirm privacy/ordering manually. |
 | F11 Environment | Present in part | Station/transit selection and environment screen exist; parts of environmental/radiation visualization are synthetic frontend data. |

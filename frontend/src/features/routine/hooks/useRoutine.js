@@ -1,22 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchRoutine, routineKey, updateRoutineItem } from '../services/routineService.js';
+import { useQuery } from '@tanstack/react-query';
+import { fetchRoutine, routineKey } from '../services/routineService.js';
 
-export function useRoutine(astronautId) {
-  const queryClient = useQueryClient();
-  const query = useQuery({
-    queryKey: routineKey(astronautId),
-    queryFn: () => fetchRoutine(astronautId),
+export function useRoutine(astronautId, environment) {
+  return useQuery({
+    queryKey: routineKey(astronautId, environment),
+    queryFn: () => fetchRoutine(astronautId, environment),
     enabled: Boolean(astronautId),
   });
-  const mutation = useMutation({
-    mutationFn: ({ itemId, done }) => updateRoutineItem(astronautId, itemId, done),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: routineKey(astronautId) }),
-  });
-
-  return {
-    ...query,
-    updateItem: mutation.mutate,
-    isUpdating: mutation.isPending,
-    updateError: mutation.error,
-  };
 }

@@ -11,6 +11,7 @@ export function useCreateCheckin() {
         queryClient.invalidateQueries({ queryKey: ['crew', 'status', variables.astronautId] }),
         queryClient.invalidateQueries({ queryKey: ['crew', 'history', variables.astronautId] }),
         queryClient.invalidateQueries({ queryKey: ['crew', 'checkins', variables.astronautId] }),
+        queryClient.invalidateQueries({ queryKey: ['crew', 'routine', variables.astronautId] }),
         queryClient.invalidateQueries({ queryKey: ['crew', 'bootstrap'] }),
       ]),
   });

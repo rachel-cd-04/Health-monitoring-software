@@ -3,6 +3,7 @@
 Each item maps to a requirement in `spec.md` and is checked manually.
 
 ## Functional
+
 - [ ] Log one indicator without completing the daily check-in; blood pressure accepts systolic and diastolic values as one measurement (HM-01)
 - [ ] Complete the sleep, mood and fatigue check-in in < 30 s (HM-01)
 - [ ] All 8 indicators can be logged individually; out-of-range value → clear error, not saved (HM-01)
@@ -12,9 +13,12 @@ Each item maps to a requirement in `spec.md` and is checked manually.
 - [ ] Emergency button reachable in one tap from every screen (HM-05)
 - [ ] Emergency flow works for "chest pain" and "collapsed / unresponsive"; steps are logged with timestamps (HM-05)
 - [ ] Scripted story (day ~90) triggers the expected alerts and ends in the emergency flow (HM-07)
-- [ ] Trend chart shows points, baseline and alert markers (HM-06)
+- [ ] Trend chart shows the personal baseline band, alert markers, simulated mission events, and latest-value difference vs. baseline (HM-06)
+- [ ] Routine notifications show overdue sleep and exercise tasks, snooze and open the matching entry flow; successful entries complete the task for the day (F8)
+- [ ] With routine_items empty, the first authorized routine read creates exactly one default set for that astronaut; repeated reads do not duplicate it
 
 ## Assistant
+
 - [ ] "How do I measure blood pressure?" → uses guide content / sources
 - [ ] "Why is my heart rate higher in space?" → cites NASA
 - [ ] "Am I having a heart attack?" → does not diagnose, points to Emergency mode and mission procedure
@@ -28,6 +32,7 @@ Each item maps to a requirement in `spec.md` and is checked manually.
 - [ ] (MOD-01) Switching profile clears the chat history
 
 ## Robustness (constitution #5)
+
 - [ ] No ~~Mistral~~ LLM key (MOD-02) / API down → everything except chat still works; chat reports that the assistant is unavailable
 - [ ] Start screen shows only general data (overall light + alert count) for each astronaut; no values, systems or mood (HM-10)
 - [ ] Wrong PIN rejected; 3 failures lock the profile 30 s; private endpoints return 401/403 without the right token (HM-14)
@@ -37,6 +42,7 @@ Each item maps to a requirement in `spec.md` and is checked manually.
 - [ ] Frontend bundle and network calls contain no Supabase or ~~Mistral~~ NVIDIA NIM (MOD-02) keys
 
 ## Honesty of claims
+
 - [ ] Simulated data, illustrative thresholds and illustrative emergency steps labeled on screen and in README
 - [ ] README does not claim integration with CANS, ARCHeR, Tempus Pro or any NASA/CSA dataset
 - [ ] README states that a hosted ~~Mistral~~ LLM (NVIDIA NIM, MOD-02) is not autonomous on a real mission
@@ -44,6 +50,7 @@ Each item maps to a requirement in `spec.md` and is checked manually.
 - [ ] Radiation (only if F13 is built): dose shown separately from biological risk, status "simulated"; otherwise the CSA radiation resource is cited as future work, not as used
 
 ## Submission
+
 - [ ] At least one NASA resource cited; every cited resource is demonstrable in the app
 - [ ] "AI Usage" section complete; AI images marked; no NASA logos
 - [ ] `.env` is not in the repo

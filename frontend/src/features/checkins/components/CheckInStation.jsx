@@ -103,7 +103,7 @@ export default function CheckInStation({
 }) {
   const [who, setWho] = useState(initial.crewId),
     [slot, setSlot] = useState(initial.slot || nextSlot(data, initial.crewId));
-  const [phase, setPhase] = useState('choice'),
+  const [phase, setPhase] = useState(initial.measurementItemId ? 'measurement' : 'choice'),
     [furthest, setFurthest] = useState(0),
     [ready, setReady] = useState(false),
     [quality, setQuality] = useState(false),
@@ -118,7 +118,7 @@ export default function CheckInStation({
   const [issue, setIssue] = useState(null),
     [closing, setClosing] = useState(false),
     [savedSession, setSavedSession] = useState(null);
-  const [selectedItem, setSelectedItem] = useState('heart_rate'),
+  const [selectedItem, setSelectedItem] = useState(initial.measurementItemId || 'heart_rate'),
     [measurementValues, setMeasurementValues] = useState({}),
     [savedMeasurement, setSavedMeasurement] = useState(null),
     [savingMeasurement, setSavingMeasurement] = useState(false);
@@ -247,12 +247,7 @@ export default function CheckInStation({
     else onClose();
   };
   return (
-    <Modal
-      title={`Health entry · ${person.name}`}
-      onClose={close}
-      wide
-      className="checkin-modal"
-    >
+    <Modal title={`Health entry · ${person.name}`} onClose={close} wide className="checkin-modal">
       <div className="quick-checkin">
         <header className="quick-header">
           <div className="quick-person">

@@ -8,6 +8,8 @@ import {
   ResponsiveContainer,
   CartesianGrid,
   Legend,
+  ReferenceArea,
+  ReferenceDot,
   ReferenceLine,
 } from 'recharts';
 import { metrics, stamp, dateLabel, number } from '../../crew/models/crewModel.js';
@@ -20,6 +22,9 @@ export default React.memo(function SampleChart({
   slot = 'all',
   large = false,
   baseline = null,
+  diastolicBaseline = null,
+  alertMarkers = [],
+  events = [],
 }) {
   const points = useMemo(
     () =>
@@ -42,6 +47,23 @@ export default React.memo(function SampleChart({
     [records, crewId, metric, days, slot],
   );
   const m = metrics[metric];
+  const visibleAlerts = alertMarkers.flatMap((marker) => {
+    const markerTime = new Date(marker.ts ?? marker.time).getTime();
+    if (!Number.isFinite(markerTime) || markerTime < Date.now() - days * 86400000) return [];
+    const markerDay = new Date(markerTime).toISOString().slice(0, 10);
+    const point = points
+      .filter((candidate) => new Date(candidate.time).toISOString().slice(0, 10) === markerDay)
+      .sort(
+        (left, right) => Math.abs(left.time - markerTime) - Math.abs(right.time - markerTime),
+      )[0];
+    const value = Number(marker.value ?? point?.value);
+    if (!Number.isFinite(value)) return [];
+    return [{ ...marker, time: point?.time ?? markerTime, value }];
+  });
+  const visibleEvents = events.filter((event) => {
+    const timestamp = new Date(event.ts ?? event.time).getTime();
+    return Number.isFinite(timestamp) && timestamp >= Date.now() - days * 86400000;
+  });
   return (
     <div
       className={'sample-chart ' + (large ? 'large' : '')}
@@ -52,6 +74,28 @@ export default React.memo(function SampleChart({
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={points} margin={{ top: 20, right: 20, left: -12, bottom: 10 }}>
             <CartesianGrid stroke="#e3eaee" strokeDasharray="3 6" vertical={false} />
+            {baseline?.low != null && baseline?.high != null && (
+              <ReferenceArea
+                y1={baseline.low}
+                y2={baseline.high}
+                fill="#4b4fc4"
+                fillOpacity={0.09}
+                strokeOpacity={0}
+                ifOverflow="hidden"
+              />
+            )}
+            {metric === 'bp' &&
+              diastolicBaseline?.low != null &&
+              diastolicBaseline?.high != null && (
+                <ReferenceArea
+                  y1={diastolicBaseline.low}
+                  y2={diastolicBaseline.high}
+                  fill="#9b87b3"
+                  fillOpacity={0.1}
+                  strokeOpacity={0}
+                  ifOverflow="hidden"
+                />
+              )}
             <XAxis
               dataKey="time"
               type="number"
@@ -105,9 +149,9 @@ export default React.memo(function SampleChart({
                 connectNulls={false}
               />
             )}
-            {baseline && (
+            {baseline?.mean != null && (
               <ReferenceLine
-                y={baseline}
+                y={baseline.mean}
                 stroke="#4b4fc4"
                 strokeDasharray="5 5"
                 label={{
@@ -118,6 +162,50 @@ export default React.memo(function SampleChart({
                 }}
               />
             )}
+            {metric === 'bp' && diastolicBaseline?.mean != null && (
+              <ReferenceLine
+                y={diastolicBaseline.mean}
+                stroke="#9b87b3"
+                strokeDasharray="4 5"
+                label={{
+                  value: 'Diastolic mean',
+                  position: 'insideBottomLeft',
+                  fill: '#806c99',
+                  fontSize: 11,
+                }}
+              />
+            )}
+            {visibleEvents.map((event) => (
+              <ReferenceLine
+                key={event.id || `${event.ts}-${event.label}`}
+                x={new Date(event.ts ?? event.time).getTime()}
+                stroke="#c08336"
+                strokeDasharray="3 4"
+                label={{
+                  value: event.label,
+                  position: 'insideTop',
+                  fill: '#8a5a12',
+                  fontSize: 10,
+                }}
+              />
+            ))}
+            {visibleAlerts.map((alert, index) => (
+              <ReferenceDot
+                key={alert.id || `${alert.rule_id || alert.ruleId}-${alert.time}-${index}`}
+                x={alert.time}
+                y={alert.value}
+                r={6}
+                fill="#b3303d"
+                stroke="#fff"
+                strokeWidth={2}
+                label={{
+                  value: alert.rule_id || alert.ruleId || 'Alert',
+                  position: 'top',
+                  fill: '#9d2633',
+                  fontSize: 10,
+                }}
+              />
+            ))}
             <Legend wrapperStyle={{ fontSize: 12, color: '#4f6573' }} />
           </LineChart>
         </ResponsiveContainer>

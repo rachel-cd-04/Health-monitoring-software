@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Download, ClipboardList, BookOpen, CalendarCheck } from 'lucide-react';
 import { baseline as personalBaseline, evaluateSignals } from '../../alerts/models/rules.js';
 import { riskFor } from '../../health/models/risks.js';
@@ -15,6 +16,19 @@ import {
   slotNames,
 } from '../../crew/models/crewModel.js';
 import SampleChart from '../components/Charts.jsx';
+import { crewHistoryKey, fetchCrewHistory } from '../../crew/hooks/crewQueries.js';
+import { missionHistoryEvents } from '../../environment/models/envData.js';
+
+const apiIndicatorByMetric = {
+  pulse: 'heart_rate',
+  bp: 'bp_systolic',
+  glucose: 'blood_sugar',
+  temp: 'temperature',
+  sleep: 'sleep_hours',
+  mood: 'mood',
+  fatigue: 'fatigue',
+  exercise: 'exercise_min',
+};
 
 export default function History({
   data,
@@ -25,12 +39,20 @@ export default function History({
   now = Date.now(),
   canView = () => true,
   onUnlock,
+  profileFor,
 }) {
   const [who, setWho] = useState(initialPerson || (crew.find((c) => canView(c.id)) || crew[0]).id),
     [metric, setMetric] = useState(initialMetric || 'pulse'),
     [days, setDays] = useState(7),
     [slot, setSlot] = useState('all'),
     [page, setPage] = useState(0);
+  const backendProfile = profileFor?.(who);
+  const backendHistory = useQuery({
+    queryKey: crewHistoryKey(backendProfile?.id, apiIndicatorByMetric[metric], 180),
+    queryFn: () => fetchCrewHistory(backendProfile.id, apiIndicatorByMetric[metric], 180),
+    enabled: Boolean(backendProfile?.id) && canView(who),
+    staleTime: 60_000,
+  });
   const rows = useMemo(
     () =>
       data.records
@@ -47,14 +69,62 @@ export default function History({
         .sort((a, b) => b.time - a.time),
     [data.records, who, metric, days, slot],
   );
+  const latestRow = rows[0];
+  const excludedLatest = useMemo(() => (latestRow ? [latestRow.id] : []), [latestRow]);
   const base = useMemo(
-    () => personalBaseline(data.records, who, metric, now + 1),
-    [data.records, who, metric, now],
+    () => personalBaseline(data.records, who, metric, now + 1, excludedLatest),
+    [data.records, who, metric, now, excludedLatest],
   );
+  const diastolicBase = useMemo(() => {
+    if (metric !== 'bp') return null;
+    const diastolicRecords = data.records.map((record) =>
+      record.metric === 'bp' ? { ...record, value: record.diastolic } : record,
+    );
+    return personalBaseline(diastolicRecords, who, 'bp', now + 1, excludedLatest);
+  }, [data.records, who, metric, now, excludedLatest]);
   const metricSignals = useMemo(
     () => evaluateSignals(data, who, now).filter((s) => s.metric === metric),
     [data, who, metric, now],
   );
+  const chartAlerts =
+    backendHistory.data?.alert_markers?.length > 0
+      ? backendHistory.data.alert_markers
+      : metricSignals.map((signal) => ({
+          id: signal.id,
+          ts: signal.observed?.time,
+          value: signal.observed?.value,
+          rule_id: signal.ruleId,
+        }));
+  const chartEvents = useMemo(
+    () => [
+      ...(backendHistory.data?.events || []),
+      ...missionHistoryEvents(who, now, Math.min(days, 180)),
+    ],
+    [backendHistory.data?.events, who, now, days],
+  );
+  const deltaText = (() => {
+    if (!latestRow || base.status !== 'ready') return null;
+    const delta = latestRow.value - base.mean;
+    const direction = delta > 0 ? 'above' : delta < 0 ? 'below' : 'at';
+    if (metric !== 'bp') {
+      return `Latest ${number(latestRow.value)} ${metrics[metric].unit} · ${number(Math.abs(delta))} ${metrics[metric].unit} ${direction} personal mean`;
+    }
+    const diastolicDelta =
+      latestRow.diastolic != null && diastolicBase?.status === 'ready'
+        ? latestRow.diastolic - diastolicBase.mean
+        : null;
+    const sysText =
+      delta === 0
+        ? `Systolic at personal mean`
+        : `Systolic ${delta > 0 ? '+' : '−'}${number(Math.abs(delta))} mmHg vs mean`;
+    const diaText =
+      diastolicDelta == null
+        ? ''
+        : diastolicDelta === 0
+          ? ' · Diastolic at mean'
+          : ` · Diastolic ${diastolicDelta > 0 ? '+' : '−'}${number(Math.abs(diastolicDelta))} mmHg vs mean`;
+    return `${sysText}${diaText}`;
+  })();
   const risk = riskFor(metric);
   const change = (setter) => (e) => {
     setter(e.target.value);
@@ -185,6 +255,14 @@ export default function History({
                     <>Baseline building · {base.n}/4 samples</>
                   )}
                 </span>
+                {deltaText && (
+                  <span
+                    className="trend-delta-chip"
+                    title="Newest selected reading compared with the current 7-day personal mean"
+                  >
+                    {deltaText}
+                  </span>
+                )}
                 <button className="text-link" onClick={() => onRisk(risk.id)}>
                   <BookOpen size={14} />
                   {risk.org} · {risk.title}
@@ -195,7 +273,22 @@ export default function History({
               <SignalCard key={sg.id} signal={sg} onRisk={onRisk} compact />
             ))}
             <SampleChart
-              baseline={base.status === 'ready' ? base.mean : null}
+              baseline={
+                base.status === 'ready'
+                  ? { mean: base.mean, low: base.mean - base.sd, high: base.mean + base.sd }
+                  : null
+              }
+              diastolicBaseline={
+                diastolicBase?.status === 'ready'
+                  ? {
+                      mean: diastolicBase.mean,
+                      low: diastolicBase.mean - diastolicBase.sd,
+                      high: diastolicBase.mean + diastolicBase.sd,
+                    }
+                  : null
+              }
+              alertMarkers={chartAlerts}
+              events={chartEvents}
               key={`${who}-${metric}-${slot}-${days}`}
               records={data.records}
               crewId={who}
@@ -205,8 +298,10 @@ export default function History({
               large
             />
             <p className="chart-footnote">
-              Each dot is a saved measurement. Lines connect recorded samples. They do not represent
-              continuous monitoring. The dashed line is the mean of the person’s last 7 days.
+              Each dot is a saved measurement; lines connect recorded samples and do not represent
+              continuous monitoring. The shaded band shows the current 7-day personal mean ± 1
+              standard deviation. Red markers show alert rules; vertical amber lines show simulated
+              mission events. These markers provide context and do not prove cause and effect.
             </p>
           </div>
           <div className="panel records-table">

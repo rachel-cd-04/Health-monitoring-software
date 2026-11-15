@@ -161,6 +161,7 @@ model RoutineItem {
   completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
   astronaut   Astronaut @relation(fields: [astronautId], references: [id])
 
+  @@unique([astronautId, item])
   @@index([astronautId, dueAt])
   @@map("routine_items")
 }

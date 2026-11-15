@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useQueries } from '@tanstack/react-query';
 import { crew, createEmptyState, environments } from '../features/crew/models/crewModel.js';
 import { environmentSignals } from '../features/environment/models/envData.js';
 import { radiationSignals, summarizeRadiation } from '../features/environment/models/radiation.js';
@@ -19,6 +20,7 @@ import { useAcknowledgeAlert } from '../features/alerts/hooks/useAcknowledgeAler
 import { useEmergencyController } from '../features/emergency/hooks/useEmergencyController.js';
 import { useReports } from '../features/reports/hooks/useReports.js';
 import { useHealth } from '../features/health/hooks/useHealth.js';
+import { fetchRoutine, routineKey } from '../features/routine/services/routineService.js';
 
 export function useAppController() {
   const [data, setData] = useState(createEmptyState),
@@ -82,6 +84,7 @@ export function useAppController() {
           environment: environmentId,
           connection: environment.connection,
           latency: environment.latency,
+          schedule: { ...current.schedule, daily: environmentId === 'transit' ? '09:00' : '08:00' },
         }));
       }
       backendEnvironmentApplied.current = true;
@@ -134,9 +137,32 @@ export function useAppController() {
     setDetail,
     notify,
   });
+  const routineProfiles = backendCrew.filter((profile) => can(profile.frontendId));
+  const routineQueries = useQueries({
+    queries: routineProfiles.map((profile) => ({
+      queryKey: routineKey(profile.id, data.environment),
+      queryFn: () => fetchRoutine(profile.id, data.environment),
+      enabled: apiConfigured && can(profile.frontendId),
+      staleTime: 15_000,
+      refetchInterval: 30_000,
+    })),
+  });
+  const routineItems = routineQueries.flatMap((query, index) =>
+    (query.data || []).map((item) => ({
+      ...item,
+      crewId: routineProfiles[index].frontendId,
+      person: crew.find((person) => person.id === routineProfiles[index].frontendId),
+    })),
+  );
   const setEnvironment = (id) => {
     const e = environments[id];
-    setData((d) => ({ ...d, environment: id, connection: e.connection, latency: e.latency }));
+    setData((d) => ({
+      ...d,
+      environment: id,
+      connection: e.connection,
+      latency: e.latency,
+      schedule: { ...d.schedule, daily: id === 'transit' ? '09:00' : '08:00' },
+    }));
     notify('Mission situation: ' + e.label);
   };
   useEffect(() => {
@@ -205,10 +231,10 @@ export function useAppController() {
   const radiationEvents = radiationQuery.data;
   const radiation = useMemo(() => summarizeRadiation(radiationEvents || []), [radiationEvents]);
   const envSignals = useMemo(
-    () => [...environmentSignals(now), ...radiationSignals(radiationEvents || [], now)],
+    () => [...environmentSignals(now), routineItems, ...radiationSignals(radiationEvents || [], now)],
     [radiationEvents, now],
   );
-  const notif = notificationModel(data, now, signals, envSignals);
+  const notif = notificationModel(data, now, signals, environmentSignals(now), routineItems);
   const snoozeReminder = (id) => {
     setData((d) => ({
       ...d,

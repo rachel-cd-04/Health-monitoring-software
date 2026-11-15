@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { prisma } from '../src/db/client.js';
+import { routineDefinitions } from '../src/routine.js';
 import { refreshSimulatedRadiation } from './radiation-data.js';
 
 // ADDITIVE by default: the seed only creates what is missing and never modifies or deletes existing
@@ -31,7 +32,7 @@ const crew = [
   { id: 4, name: 'Noa Ríos', role: 'crew' as const, avatar: 'NR', pin: '4444' },
 ];
 
-const routineNames = ['Daily check-in', 'Exercise session', 'Recovery and sleep review'];
+const routineNames = routineDefinitions.map(({ item }) => item);
 const dailyReadings = [
   {
     heartRate: 64,

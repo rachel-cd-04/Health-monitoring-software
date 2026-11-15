@@ -62,6 +62,7 @@ Authenticated self-only endpoint. `days` ∈ 1..180. Returns the persisted check
 `days` ∈ 7 | 30 | 180. → `{ indicator, unit, points: [{ts,value,source}], baseline: {mean, low, high}, alert_markers: [{ts, rule_id}], events: [{ts, label}] }`
 
 ### `GET /astronauts/:id/routine`
+Accepts optional `environment=station|transit`. Missing default tasks are created idempotently on first read; the endpoint refreshes their daily due time for the selected environment.
 → `[{ item, due_at, done, overdue }]`
 
 ### `PATCH /astronauts/:id/routine/:item_id`

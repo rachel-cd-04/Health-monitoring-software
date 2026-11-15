@@ -4211,17 +4211,15 @@ html.theme-dark .notif-icon.ok {
 .routine-list li:last-child {
   border-bottom: 0;
 }
-.routine-list label {
+.routine-item-content {
   display: flex;
   flex: 1;
-  flex-direction: row;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  margin: 0;
 }
-.routine-list input {
-  width: 18px;
-  min-height: 18px;
+.routine-item-content > span:first-child {
+  min-width: 0;
 }
 .routine-list b,
 .routine-list small {
@@ -4234,6 +4232,12 @@ html.theme-dark .notif-icon.ok {
 }
 .routine-list .overdue small {
   color: var(--review);
+}
+.routine-complete {
+  flex-shrink: 0;
+  color: var(--teal-ink);
+  font-size: 12px;
+  font-weight: 600;
 }
 @media (max-width: 640px) {
   .rp-two,

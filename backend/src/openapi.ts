@@ -280,7 +280,7 @@ export const openapi: Record<string, unknown> = {
       },
     },
     '/api/astronauts/{id}/routine': {
-      get: { tags: ['Astronauts'], security: secured, summary: 'List routine items', parameters: [{ $ref: '#/components/parameters/AstronautId' }], responses: { '200': json({ type: 'array', items: ref('RoutineItem') }), '401': errorResponse(), '403': errorResponse() } },
+      get: { tags: ['Astronauts'], security: secured, summary: 'List daily routine items for a mission environment', parameters: [{ $ref: '#/components/parameters/AstronautId' }, { name: 'environment', in: 'query', schema: { type: 'string', enum: ['station', 'transit'], default: 'station' } }], responses: { '200': json({ type: 'array', items: ref('RoutineItem') }), '400': errorResponse(), '401': errorResponse(), '403': errorResponse() } },
     },
     '/api/astronauts/{id}/routine/{item_id}': {
       patch: {

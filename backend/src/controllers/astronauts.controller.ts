@@ -1,8 +1,25 @@
 import { type NextFunction, type Request, type Response } from 'express';
+import { type Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '../db/client.js';
 import { type AuthRequest } from '../middleware/auth.js';
+import { routineDefinitions } from '../routine.js';
 import { activeAlerts, alertResponse, evaluateDerivedRules, idSchema, indicators, missionDay, parseBody, sendError, serialize, sourceSchema } from './common.js';
+
+function utcDayStart(date = new Date()) {
+  const start = new Date(date);
+  start.setUTCHours(0, 0, 0, 0);
+  return start;
+}
+
+function isTodayUTC(date: Date, now = new Date()) {
+  const start = utcDayStart(now).getTime();
+  return date.getTime() >= start && date.getTime() < start + 86400000;
+}
+
+async function completeRoutineTask(tx: Prisma.TransactionClient, astronautId: number, item: string, at = new Date()) {
+  await tx.routineItem.updateMany({ where: { astronautId, item }, data: { done: true, completedAt: at } });
+}
 
 function checkinResponse(checkin: {
   id: bigint;
@@ -57,8 +74,15 @@ export async function createMeasurementController(req: AuthRequest, res: Respons
     const range = indicators[body.indicator];
     if (!range || body.value < range.min || body.value > range.max) return sendError(res, 400, 'VALUE_OUT_OF_RANGE', 'The measurement is outside the valid range.');
     if (body.unit !== range.unit) return sendError(res, 400, 'VALIDATION_ERROR', 'The measurement unit does not match its indicator.');
-    const measurement = await prisma.measurement.create({
-      data: { astronautId: body.astronaut_id, indicator: body.indicator, value: body.value, unit: body.unit, ts: body.ts, source: body.source, missionPhase: body.mission_phase },
+    const measurement = await prisma.$transaction(async (tx) => {
+      const saved = await tx.measurement.create({
+        data: { astronautId: body.astronaut_id, indicator: body.indicator, value: body.value, unit: body.unit, ts: body.ts, source: body.source, missionPhase: body.mission_phase },
+      });
+      if (isTodayUTC(saved.ts)) {
+        if (body.indicator === 'exercise_min') await completeRoutineTask(tx, body.astronaut_id, 'Exercise session');
+        if (body.indicator === 'sleep_hours') await completeRoutineTask(tx, body.astronaut_id, 'Recovery and sleep review');
+      }
+      return saved;
     });
     const alerts = await evaluateDerivedRules(body.astronaut_id);
     res.status(201).json(serialize({ measurement, alerts: alerts.map(alertResponse) }));
@@ -174,6 +198,12 @@ export async function createCheckinController(req: AuthRequest, res: Response, n
             },
           });
         }
+      }
+      const completedAt = new Date();
+      if (isTodayUTC(saved.day, completedAt)) {
+        await completeRoutineTask(tx, body.astronaut_id, 'Daily check-in', completedAt);
+        if (typeof saved.exerciseMin === 'number') await completeRoutineTask(tx, body.astronaut_id, 'Exercise session', completedAt);
+        if (typeof saved.sleepHours === 'number') await completeRoutineTask(tx, body.astronaut_id, 'Recovery and sleep review', completedAt);
       }
       return saved;
     });
@@ -299,8 +329,36 @@ export async function getHistoryController(req: AuthRequest, res: Response, next
 
 export async function getRoutineController(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const items = await prisma.routineItem.findMany({ where: { astronautId: idSchema.parse(req.params.id) }, orderBy: { dueAt: 'asc' } });
-    res.json(serialize(items.map((item) => ({ id: item.id, item: item.item, due_at: item.dueAt, done: item.done, overdue: !item.done && item.dueAt < new Date() }))));
+    const astronautId = idSchema.parse(req.params.id);
+    const environment = z.enum(['station', 'transit']).safeParse(req.query.environment ?? 'station');
+    if (!environment.success) return sendError(res, 400, 'VALIDATION_ERROR', 'Environment must be station or transit.');
+    const today = utcDayStart();
+    await Promise.all(routineDefinitions.map(({ item, hours }) => {
+      const dueAt = new Date(today);
+      dueAt.setUTCHours(hours[environment.data], 0, 0, 0);
+      return prisma.routineItem.upsert({
+        where: { astronautId_item: { astronautId, item } },
+        create: { astronautId, item, dueAt },
+        update: {},
+      });
+    }));
+    const items = await prisma.routineItem.findMany({ where: { astronautId }, orderBy: { dueAt: 'asc' } });
+    const normalized = await Promise.all(items.map(async (item) => {
+      const definition = routineDefinitions.find((routine) => routine.item === item.item);
+      if (!definition) return item;
+      const dueAt = new Date(today);
+      dueAt.setUTCHours(definition.hours[environment.data], 0, 0, 0);
+      const completedToday = Boolean(item.done && item.completedAt && isTodayUTC(item.completedAt));
+      if (item.dueAt.getTime() !== dueAt.getTime() || item.done !== completedToday || (item.completedAt && item.completedAt < today)) {
+        return prisma.routineItem.update({
+          where: { id: item.id },
+          data: { dueAt, done: completedToday, completedAt: completedToday ? item.completedAt : null },
+        });
+      }
+      return item;
+    }));
+    normalized.sort((left, right) => left.dueAt.getTime() - right.dueAt.getTime());
+    res.json(serialize(normalized.map((item) => ({ id: item.id, item: item.item, due_at: item.dueAt, done: item.done, overdue: !item.done && item.dueAt < new Date() }))));
   } catch (e) {
     next(e);
   }

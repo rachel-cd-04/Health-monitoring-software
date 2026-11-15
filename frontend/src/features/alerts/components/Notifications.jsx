@@ -24,6 +24,7 @@ export function NotificationCenter({
   onSnooze,
   onRestore,
   onEnvironment,
+  onStartRoutine,
 }) {
   const ref = useRef();
   const onCloseRef = useRef(onClose);
@@ -45,7 +46,12 @@ export function NotificationCenter({
     };
   }, []);
   const empty =
-    !model.due.length && !model.snoozed.length && !model.env.length && !model.resolved.length;
+    !model.due.length &&
+    !model.routineDue.length &&
+    !model.snoozed.length &&
+    !model.routineSnoozed.length &&
+    !model.env.length &&
+    !model.resolved.length;
   return (
     <section
       className="notif-center"
@@ -89,6 +95,32 @@ export function NotificationCenter({
                 </article>
               );
             })}
+          </div>
+        )}
+        {model.routineDue.length > 0 && (
+          <div className="notif-group">
+            <h3>Mission routine due</h3>
+            {model.routineDue.map((item) => (
+              <article key={item.id} className="notif-item due">
+                <span className="notif-icon">
+                  <CalendarCheck size={18} />
+                </span>
+                <div>
+                  <b>
+                    {item.person.name} · {item.item}
+                  </b>
+                  <span>Overdue since {timeLabel(new Date(item.due_at).getTime())} UTC</span>
+                  <div className="notif-actions">
+                    <button className="button primary small" onClick={() => onStartRoutine(item)}>
+                      Start
+                    </button>
+                    <button className="text-link" onClick={() => onSnooze(item.id)}>
+                      Remind me in 15 min
+                    </button>
+                  </div>
+                </div>
+              </article>
+            ))}
           </div>
         )}
         {model.env.length > 0 && (
@@ -142,6 +174,27 @@ export function NotificationCenter({
             ))}
           </div>
         )}
+        {model.routineSnoozed.length > 0 && (
+          <div className="notif-group">
+            <h3>Snoozed routine tasks</h3>
+            {model.routineSnoozed.map((item) => (
+              <article key={item.id} className="notif-item quiet">
+                <span className="notif-icon">
+                  <Clock size={18} />
+                </span>
+                <div>
+                  <b>
+                    {item.person.name} · {item.item}
+                  </b>
+                  <span>Back at {timeLabel(item.snoozedUntil)} UTC</span>
+                </div>
+                <button className="text-link" onClick={() => onRestore(item.id)}>
+                  Undo
+                </button>
+              </article>
+            ))}
+          </div>
+        )}
         {empty && (
           <div className="notif-empty">
             <CheckCheck size={26} />
@@ -149,7 +202,9 @@ export function NotificationCenter({
             <span>
               {model.upcoming
                 ? `Next check-in at ${data.schedule.daily} UTC.`
-                : 'All of today’s check-ins are done.'}
+                : model.routineUpcoming
+                  ? `Next routine task: ${model.routineUpcoming.item} at ${timeLabel(new Date(model.routineUpcoming.due_at).getTime())} UTC.`
+                  : 'All of today’s check-ins and routine tasks are done.'}
             </span>
           </div>
         )}

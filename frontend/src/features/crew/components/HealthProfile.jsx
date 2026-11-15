@@ -35,6 +35,7 @@ import { recentReports } from '../../reports/models/healthReport.js';
 import { baseline } from '../../alerts/models/rules.js';
 import { risks, metricRisk, metricContext } from '../../health/models/risks.js';
 import RoutineChecklist from '../../routine/components/RoutineChecklist.jsx';
+import { routineLaunch } from '../../routine/models/routineModel.js';
 
 function Sparkline({ points, base }) {
   if (points.length < 2) return null;
@@ -452,7 +453,14 @@ export default function HealthProfile({
           </div>
         </aside>
       </div>
-      {backendAstronautId && <RoutineChecklist astronautId={backendAstronautId} />}
+      {backendAstronautId && (
+        <RoutineChecklist
+          astronautId={backendAstronautId}
+          crewId={person.id}
+          environment={data.environment}
+          onStart={(item, crewId) => onMeasure(routineLaunch(item, crewId))}
+        />
+      )}
     </div>
   );
 }

@@ -35,6 +35,7 @@ import '../styles.css';
 import '../health.css';
 import '../operations.css';
 import '../quick-checkin.css';
+import { routineLaunch } from '../features/routine/models/routineModel.js';
 import '../theme.css';
 import '../dark-legacy.css';
 import '../shell.css';
@@ -198,6 +199,10 @@ export default function App() {
                   setReminders(false);
                   openStation(i);
                 }}
+                onStartRoutine={(item) => {
+                  setReminders(false);
+                  openStation(routineLaunch(item.item, item.crewId));
+                }}
                 onSnooze={snoozeReminder}
                 onRestore={restoreReminder}
                 onEnvironment={() => {
@@ -272,6 +277,7 @@ export default function App() {
             now={now}
             canView={can}
             onUnlock={requestAccess}
+            profileFor={profileFor}
           />
         )}
         {view === 'environment' && (
