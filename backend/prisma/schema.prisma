@@ -93,14 +93,20 @@ model Measurement {
 }
 
 model Checkin {
-  id          BigInt     @id @default(autoincrement())
-  astronautId Int        @map("astronaut_id")
-  day         DateTime   @db.Date
-  sleepHours  Decimal?   @map("sleep_hours") @db.Decimal(5, 2)
-  mood        Int?       @db.SmallInt
-  fatigue     Int?       @db.SmallInt
-  source      DataSource
-  astronaut   Astronaut  @relation(fields: [astronautId], references: [id])
+  id            BigInt     @id @default(autoincrement())
+  astronautId   Int        @map("astronaut_id")
+  day           DateTime   @db.Date
+  heartRate     Decimal?   @map("heart_rate") @db.Decimal(10, 3)
+  bpSystolic    Decimal?   @map("bp_systolic") @db.Decimal(10, 3)
+  bpDiastolic   Decimal?   @map("bp_diastolic") @db.Decimal(10, 3)
+  bloodSugar    Decimal?   @map("blood_sugar") @db.Decimal(10, 3)
+  temperature   Decimal?   @db.Decimal(10, 3)
+  sleepHours    Decimal?   @map("sleep_hours") @db.Decimal(5, 2)
+  mood          Int?       @db.SmallInt
+  fatigue       Int?       @db.SmallInt
+  exerciseMin   Decimal?   @map("exercise_min") @db.Decimal(10, 3)
+  source        DataSource
+  astronaut     Astronaut  @relation(fields: [astronautId], references: [id])
 
   @@unique([astronautId, day])
   @@index([astronautId, day])

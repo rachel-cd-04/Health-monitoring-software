@@ -47,8 +47,12 @@ Body: `{ astronaut_id, indicator, value, unit, ts?, source, mission_phase? }`
 → 201 `{ measurement, alerts: Alert[] }` (new alerts raised by the rule engine)
 
 ### `POST /checkins`
-Body: `{ astronaut_id, day, sleep_hours?, mood?, fatigue?, source }`
+Body: `{ astronaut_id, day, heart_rate?, bp_systolic?, bp_diastolic?, blood_sugar?, temperature?, sleep_hours?, mood?, fatigue?, exercise_min?, source }`
 → 201 `{ checkin, alerts: Alert[] }`. Upsert per astronaut + day.
+Provided check-in indicators are also synchronized to the measurements history for that UTC day. Repeating the same check-in updates that day's measurements instead of adding duplicate readings.
+
+### `GET /astronauts/:id/checkins?days=30`
+Authenticated self-only endpoint. `days` ∈ 1..180. Returns the persisted check-ins for rebuilding private client state after a reload.
 
 ### `GET /astronauts/:id/status`
 → `{ astronaut, mission_day, systems: [{ body_system, status: green|amber|red|grey, latest: [{indicator,value,unit,ts,source}], alerts: Alert[] }], active_alerts: Alert[] }`
@@ -64,7 +68,8 @@ Body: `{ done: boolean }`
 → 200 `{ item, due_at, done, overdue }`
 
 ### `GET /crew/overview` (public, general level)
-→ `{ mission_day, environment, comms_delay_s, crew: [{ id, name, role, avatar, overall: green|amber|red|grey, active_alert_count }] }` sorted by attention needed. **Never** returns values, body systems or mood/sleep.
+Returns privacy-safe crew status, active alert counts, and `checkin_done_today`. It does not expose medical measurements or private check-in values.
+→ `{ mission_day, environment, comms_delay_s, checkin_done_today, crew: [{ id, name, role, avatar, overall: green|amber|red|grey, active_alert_count }] }` sorted by attention needed. **Never** returns values, body systems or mood/sleep.
 
 ### `GET /crew/alerts` (commander)
 → `[{ astronaut_id, name, level, title, ts }]` for the *other* astronauts' active alerts. No values, no mental-health data.

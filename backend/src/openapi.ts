@@ -99,10 +99,16 @@ export const openapi: Record<string, unknown> = {
         properties: {
           astronaut_id: { type: 'integer', minimum: 1, example: 1 },
           day: { type: 'string', format: 'date', example: '2026-11-14' },
+          heart_rate: { type: 'number', minimum: 30, maximum: 220 },
+          bp_systolic: { type: 'number', minimum: 60, maximum: 260 },
+          bp_diastolic: { type: 'number', minimum: 30, maximum: 160 },
+          blood_sugar: { type: 'number', minimum: 20, maximum: 600 },
+          temperature: { type: 'number', minimum: 30, maximum: 43 },
           sleep_hours: { type: 'number', minimum: 0, maximum: 24 },
           mood: { type: 'integer', minimum: 1, maximum: 5 },
           fatigue: { type: 'integer', minimum: 1, maximum: 5 },
-          source: { type: 'string', enum: ['manual', 'simulated'] },
+          exercise_min: { type: 'number', minimum: 0, maximum: 600 },
+          source: { type: 'string', enum: ['manual', 'simulated', 'sensor'] },
         },
       },
       Alert: {
@@ -179,6 +185,7 @@ export const openapi: Record<string, unknown> = {
           crew: { type: 'array', items: { type: 'object', properties: {
             id: { type: 'integer' }, name: { type: 'string' }, role: { type: 'string' }, avatar: { type: 'string', nullable: true },
             overall: { type: 'string', enum: ['green', 'amber', 'red', 'grey'] }, active_alert_count: { type: 'integer' },
+            checkin_done_today: { type: 'boolean' },
           } } },
         },
       },
@@ -230,6 +237,23 @@ export const openapi: Record<string, unknown> = {
         responses: { '201': json({ type: 'object', properties: { checkin: { type: 'object' }, alerts: { type: 'array', items: ref('Alert') } } }), '400': errorResponse(), '401': errorResponse(), '403': errorResponse() },
       },
     },
+    '/api/astronauts/{id}/checkins': {
+      get: {
+        tags: ['Astronauts'],
+        security: secured,
+        summary: 'List the authenticated astronaut check-ins',
+        parameters: [
+          { $ref: '#/components/parameters/AstronautId' },
+          { name: 'days', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 180, default: 30 } },
+        ],
+        responses: {
+          '200': json({ type: 'array', items: { type: 'object' } }),
+          '400': errorResponse(),
+          '401': errorResponse(),
+          '403': errorResponse(),
+        },
+      },
+    },
     '/api/astronauts/{id}/status': {
       get: { tags: ['Astronauts'], security: secured, summary: 'Read private health status', parameters: [{ $ref: '#/components/parameters/AstronautId' }], responses: { '200': json({ type: 'object' }), '401': errorResponse(), '403': errorResponse(), '404': errorResponse() } },
     },
@@ -276,7 +300,7 @@ export const openapi: Record<string, unknown> = {
       get: { tags: ['Emergency'], summary: 'Generate an illustrative emergency summary', parameters: [{ $ref: '#/components/parameters/EventId' }], responses: { '200': json({ type: 'object', properties: { event: { type: 'object' }, timeline: { type: 'array', items: { type: 'object' } }, vitals: { type: 'array', items: { type: 'object' } }, text: { type: 'string' } } }), '404': errorResponse(), '429': errorResponse() } },
     },
     '/api/radiation/events': {
-      get: { tags: ['Radiation'], summary: 'List simulated radiation events', responses: { '200': json({ type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, ts: { type: 'string', format: 'date-time' }, doseMsv: { type: 'number', nullable: true }, doseRateUsvH: { type: 'number', nullable: true }, radiationType: { type: 'string', nullable: true }, location: { type: 'string', nullable: true }, instrument: { type: 'string', nullable: true }, eventType: { type: 'string', nullable: true }, source: { type: 'string' } } } }) } },
+      get: { tags: ['Radiation'], summary: 'List simulated radiation events', responses: { '200': json({ type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, ts: { type: 'string', format: 'date-time' }, dose_msv: { type: 'number', nullable: true }, dose_rate_usv_h: { type: 'number', nullable: true }, radiation_type: { type: 'string', nullable: true }, location: { type: 'string', nullable: true }, instrument: { type: 'string', nullable: true }, event_type: { type: 'string', nullable: true }, source: { type: 'string' } } } }) } },
     },
     '/api/sources': {
       get: { tags: ['Sources'], summary: 'List NASA and mission reference sources', responses: { '200': json({ type: 'array', items: ref('Source') }) } },

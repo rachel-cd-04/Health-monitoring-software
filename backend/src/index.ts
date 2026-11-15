@@ -25,6 +25,12 @@ app.get('/docs/openapi.json', (_req, res) => res.json(openapi));
 app.use('/docs', express.static(swaggerUiDistPath, { index: false }));
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapi));
 
+const rulesReady = syncRules();
+app.use((req, _res, next) => {
+  if (req.path === '/health') return next();
+  void rulesReady.then(() => next()).catch(next);
+});
+
 registerRoutes(app);
 
 app.use((_req, res) => sendError(res, 404, 'NOT_FOUND', 'Endpoint not found.'));
@@ -43,7 +49,7 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
 });
 
 async function start() {
-  void syncRules().catch((err) => console.error('Rule synchronization failed:', err));
+  void rulesReady.catch((err) => console.error('Rule synchronization failed:', err));
   app.listen(port, () => {
     console.log(`Astro Health Monitor backend listening on port ${port}`);
     console.log(`Swagger UI available at http://localhost:${port}/docs/`);
@@ -53,6 +59,4 @@ async function start() {
 
 if (process.env.VERCEL !== '1') {
   void start();
-} else {
-  void syncRules().catch((err) => console.error('Rule synchronization failed:', err));
 }

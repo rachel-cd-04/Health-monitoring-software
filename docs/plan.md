@@ -3,7 +3,7 @@
 ## Stack
 | Layer | Technology | Why |
 |---|---|---|
-| Frontend | React + Vite + TypeScript, Recharts | Fast to scaffold, simple charts |
+| Frontend | React + Vite + JavaScript (JSX), Recharts | Fast to scaffold, simple charts |
 | Backend | Node.js + Express + TypeScript | Same JavaScript/TypeScript ecosystem as the frontend |
 | API documentation | Swagger UI + OpenAPI 3 | Interactive endpoint documentation at `/docs` |
 | Validation | zod at the API boundary | Input validation that implements the API contract (HM-01) |
@@ -27,6 +27,8 @@ Astronaut ─► Frontend (React) ─► Backend API (Express)
 - The frontend **never** talks to Supabase directly; only the backend holds the database connection string (constitution #6). RLS is enabled on all tables with no public policies.
 - Runtime queries use the IPv4 transaction pooler through `DATABASE_URL`; Prisma migrations use the session pooler through `DIRECT_URL`.
 - Emergency tree and measurement guides are static JSON bundled in the frontend. There is no offline mode (F14 is out of scope).
+
+The implemented MVC-adapted backend and current frontend feature structure are documented in [`architecture.md`](architecture.md). That document describes the code as it exists today; this plan remains the target/design reference where the two differ.
 
 ## Identity and roles
 - No accounts. The start screen is a profile picker (4 astronauts + environment). Entering a profile calls `POST /auth/login { astronaut_id, pin }`; the backend compares with `pin_hash` (bcrypt), applies the lockout (3 failures → 30 s via `failed_pin_attempts` / `locked_until`) and returns a JWT (HS256, 12 h) holding `astronaut_id` and `role`.
@@ -60,10 +62,9 @@ astro-health-monitor/
 │       ├── api-contract.md ← endpoints, request/response, errors
 │       └── traceability.md ← HM-xx → tasks → manual checks
 ├── frontend/src/
-│   ├── pages/              ← Dashboard, CheckIn, Trends, Commander, Assistant, Emergency
-│   ├── components/         ← BodyMap, StatusChip, TrendChart, AlertCard, GuideCard, ChatPanel (global, mounted in the layout — MOD-01)
-│   ├── services/           ← API client (follows docs/specs/api-contract.md)
-│   └── content/            ← bundled JSON: emergency-tree.json, guides.json
+│   ├── app/                ← application shell, navigation, providers and app controller
+│   ├── features/           ← feature-owned components, hooks, models, pages and services
+│   └── shared/             ← cross-feature API client, shared components and utilities
 ├── backend/
 │   ├── src/
 │   │   ├── index.ts        ← Express app bootstrap (helmet, cors, rate limit)

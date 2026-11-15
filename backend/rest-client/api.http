@@ -1,4 +1,4 @@
-@baseUrl = https://backend-sandy-pi-25.vercel.app
+@baseUrl = http://localhost:3000
 @api = {{baseUrl}}/api
 @astronautId = 1
 @astronautPin = 1111
@@ -94,11 +94,21 @@ Content-Type: application/json
 {
   "astronaut_id": {{astronautId}},
   "day": "2026-11-14",
+  "heart_rate": 72,
+  "bp_systolic": 118,
+  "bp_diastolic": 76,
+  "blood_sugar": 92,
+  "temperature": 36.6,
   "sleep_hours": 7,
   "mood": 4,
   "fatigue": 2,
+  "exercise_min": 90,
   "source": "manual"
 }
+
+### Persisted check-ins used to restore the frontend after a reload
+GET {{api}}/astronauts/{{astronautId}}/checkins?days=30
+Authorization: Bearer {{commanderToken}}
 
 
 ### Create a normal measurement

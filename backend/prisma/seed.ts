@@ -30,7 +30,10 @@ const baselineMeasurements : [string, number, string][] = [
   ['bp_diastolic', 75, 'mmHg'],
   ['blood_sugar', 92, 'mg/dL'],
   ['temperature', 36.6, '°C'],
-  ['exercise_min', 75, 'min'],
+  ['sleep_hours', 7, 'h'],
+  ['mood', 4, '1–5'],
+  ['fatigue', 2, '1–5'],
+  ['exercise_min', 90, 'min'],
 ];
 
 async function main() {
@@ -81,13 +84,18 @@ async function main() {
     checkinDay.setHours(0, 0, 0, 0);
     await prisma.checkin.upsert({
       where: { astronautId_day: { astronautId: astronaut.id, day: checkinDay } },
-      update: { sleepHours: 7, mood: 4, fatigue: 2, source: 'simulated' },
-      create: { astronautId: astronaut.id, day: checkinDay, sleepHours: 7, mood: 4, fatigue: 2, source: 'simulated' },
+      update: { heartRate: 72, bpSystolic: 118, bpDiastolic: 76, bloodSugar: 92, temperature: 36.6, sleepHours: 7, mood: 4, fatigue: 2, exerciseMin: 90, source: 'simulated' },
+      create: { astronautId: astronaut.id, day: checkinDay, heartRate: 72, bpSystolic: 118, bpDiastolic: 76, bloodSugar: 92, temperature: 36.6, sleepHours: 7, mood: 4, fatigue: 2, exerciseMin: 90, source: 'simulated' },
     });
 
     for (const [indicator, value, unit] of baselineMeasurements) {
       const existing = await prisma.measurement.findFirst({ where: { astronautId: astronaut.id, indicator, source: 'simulated' } });
-      if (!existing) {
+      if (existing) {
+        await prisma.measurement.update({
+          where: { id: existing.id },
+          data: { value, unit, missionPhase: 'in_flight' },
+        });
+      } else {
         await prisma.measurement.create({
           data: { astronautId: astronaut.id, indicator, value, unit, source: 'simulated', missionPhase: 'in_flight' },
         });

@@ -16,9 +16,18 @@ Health self-monitoring dashboard for astronauts on long-duration missions: track
 - AI assistant (~~Mistral~~ LLM agentic loop via NVIDIA NIM — MOD-02) that explains and cites NASA/CSA sources, never diagnoses. Available on every screen: without a PIN it only sees public data (each astronaut's active alerts); with a PIN it also sees your own private data, never anyone else's (MOD-01)
 
 ## Stack
-Frontend: React + Vite + TypeScript · Backend: Node.js + Express + TypeScript · ORM: Prisma 7 · DB: Supabase PostgreSQL · LLM: ~~Mistral API~~ OpenAI SDK → NVIDIA NIM, ~~`deepseek-ai/deepseek-v4.1-flash` (MOD-02)~~ `nvidia/nemotron-3.5-super-vl-120b-a12b` (MOD-03)
+Frontend: React + Vite + JavaScript (JSX) · Backend: Node.js + Express + TypeScript · ORM: Prisma 7 · DB: Supabase PostgreSQL · LLM: ~~Mistral API~~ OpenAI SDK → NVIDIA NIM, ~~`deepseek-ai/deepseek-v4.1-flash` (MOD-02)~~ `nvidia/nemotron-3.5-super-vl-120b-a12b` (MOD-03)
+
+## Frontend structure
+- `frontend/src/main.jsx` starts React; `app/` contains providers, navigation and the application shell.
+- `features/<area>/` groups each feature's components, hooks, models and services.
+- `shared/` contains modules used across features, such as the API client and modal.
+- Imports point to module files directly; there are no `index.js` barrel files hiding where exports come from.
+- The frontend requires the backend and has no offline mode.
 
 ## Run locally
+Before starting the frontend, set `VITE_API_URL=http://localhost:3000` in `frontend/.env.local`.
+
 ```bash
 cd backend && cp .env.example .env  # fill in your keys (never commit .env)
 cd backend && npm install && npm run prisma:generate && npm run prisma:migrate && npm run prisma:seed && npm run dev
@@ -27,6 +36,10 @@ cd frontend && npm install && npm run dev
 
 Swagger UI is available at `http://localhost:3000/docs`.
 The OpenAPI document is available at `http://localhost:3000/docs/openapi.json`.
+
+## End-to-end tests
+
+Cypress browser tests, the isolated Supabase test-project setup and repeatability details are in [`docs/testing.md`](docs/testing.md). The browser-only flows can run against stubbed API responses; the Supabase integration spec must use a dedicated test project.
 
 The seed creates the four fictional frontend profiles:
 
@@ -40,7 +53,7 @@ The seed creates the four fictional frontend profiles:
 These PINs are only for the synthetic demo and must not be used for real authentication.
 
 ## Methodology
-Spec-Driven Development: see [`docs/`](docs/) — `constitution.md` → `spec.md` → `plan.md` → `tasks.md` → `verification.md`, plus `docs/specs/` (API contract and traceability matrix).
+Spec-Driven Development: see [`docs/`](docs/) — `constitution.md` → `spec.md` → `plan.md` → `tasks.md` → `verification.md`, plus `docs/specs/` (API contract and traceability matrix) and [`architecture.md`](docs/architecture.md) (implemented backend and frontend architecture).
 
 ## NASA / CSA resources used
 Only resources demonstrable in the app are listed (see `docs/spec.md` §7).

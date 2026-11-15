@@ -174,7 +174,7 @@ See `constitution.md`. 100 % synthetic data. At least one NASA resource from the
 ## 8. Platform constraints
 - Backend is Node + Express with Prisma ORM 7; request/response contracts are described in `docs/specs/api-contract.md` and validated at the API boundary.
 - Supabase is only accessed from the backend with the service key; RLS is on with no public policies.
-- Emergency tree and guides are static JSON bundled with the frontend. There is no offline mode: the app needs its backend (except in the no-backend demo, which stores data in the browser).
+- Emergency tree and guides are static JSON bundled with the frontend. The app requires its backend; it has no offline mode.
 - Auth: PIN → JWT (`Authorization: Bearer`), signed with `JWT_SECRET` (backend `.env` only). Libraries: `bcryptjs`, `jsonwebtoken`. See "Access, privacy and roles".
 
 ## 9. Modifications log

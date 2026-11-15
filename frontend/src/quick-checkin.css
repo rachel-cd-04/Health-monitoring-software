@@ -1,10 +1,1375 @@
-.notification-button{width:38px;height:38px;display:grid;place-items:center;border:1px solid #d7e4ea;border-radius:50%;position:relative;color:#567382;background:#f7fafb}.notification-button>b{position:absolute;right:-4px;top:-5px;background:#b98244;color:#fff;border:2px solid #fff;min-width:19px;height:19px;display:grid;place-items:center;font-size:13px;font-weight:500;border-radius:50%}.notification-button:hover{background:#eaf4f7}.checkin-reminder-banner{display:flex;align-items:center;gap:18px;padding:20px 23px;margin-bottom:25px;border:1px solid #d7c4a5;background:#fbf6ec;border-radius:12px;color:#806b4c;animation:content-enter .3s ease both}.reminder-bell{display:grid;place-items:center;width:45px;height:45px;border-radius:12px;background:#f2e8d4;color:#866b3e;flex-shrink:0}.checkin-reminder-banner>div:nth-child(2){flex:1;min-width:0}.reminder-caption{font-size:13px;color:#7f6c4f}.checkin-reminder-banner h2{font-size:22px;letter-spacing:-.4px;font-weight:400;color:#7c6b51;margin:5px 0 7px}.checkin-reminder-banner p{font-size:13px;color:#7c6a51;line-height:1.6}.reminder-actions{display:flex;align-items:center;flex-direction:column;gap:6px;flex-shrink:0}.reminder-actions .button{background:#8c784e;border-color:#8c784e;font-size:13px}.reminder-actions .button:hover{background:#786642}.reminder-actions .text-button{font-size:13px;color:#7f6a49}.reminder-all{font-size:13px;color:#7e6b51;padding:2px}.reminders-modal-title{display:flex;gap:15px;align-items:center;color:#547280;margin:4px 0 23px}.reminders-modal-title h2{font-size:25px;font-weight:400;color:#50788b;margin-bottom:7px}.reminders-modal-title p{font-size:13px;color:#587382}.reminder-list article{display:flex;align-items:center;gap:13px;padding:17px 0;border-bottom:1px solid #e0e9ee}.reminder-slot-icon{width:38px;height:38px;display:grid;place-items:center;background:#f0f5f8;border:1px solid #dce7ed;border-radius:10px;color:#557384}.reminder-list article.due .reminder-slot-icon{background:#faf1df;border-color:#e6d6b7;color:#816a41}.reminder-list article>div:nth-child(2){flex:1}.reminder-list h3{font-size:15px;font-weight:500;color:#567384}.reminder-list p{font-size:13px;color:#587382;margin:5px 0}.reminder-list small{font-size:13px;color:#796b54}.reminder-list article>div:last-child{display:flex;flex-direction:column;gap:7px;align-items:center}.reminder-list .button{font-size:13px;min-height:34px;padding:8px 13px}.reminder-list .text-button{font-size:13px}.reminders-modal-title+.reminder-list{margin-bottom:20px}.station-small-print>svg{vertical-align:middle;margin-right:4px}.routine-slot.due{background:#fcf6eb;border-radius:6px;padding-left:7px;padding-right:7px;margin-top:3px}.routine-slot.due b{color:#87683b}
-.quick-checkin{padding:0 5px 6px}.quick-header{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:0 0 17px;border-bottom:1px solid #e2ebef}.quick-person{display:flex;align-items:center;gap:11px}.quick-person .avatar{width:34px;height:34px;background:#e5f0f4;color:#5d8396}.quick-person b{display:block;font-size:15px;font-weight:500;color:#4b7186}.quick-person small{display:block;font-size:13px;color:#557282;margin-top:5px}.quick-operator{font-size:13px;color:#587383}.quick-stepper{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin:20px 0 26px}.quick-stepper button{display:flex;align-items:center;gap:9px;font-size:13px;padding:7px 0;color:#567281;text-align:left;white-space:nowrap;transition:color .2s}.quick-stepper button>span{display:grid;place-items:center;width:25px;height:25px;border:1px solid #d6e4eb;border-radius:50%;font-size:13px;flex-shrink:0;transition:background .2s}.quick-stepper button.active{color:#347b8e}.quick-stepper button.active>span{background:#347b8e;border-color:#347b8e;color:#fff}.quick-stepper button.done{color:#4b7868}.quick-stepper button.done>span{background:#e7f3ed;border-color:#c3ddcf}.quick-heading{margin-bottom:23px}.quick-heading h2{font-size:31px;color:#426b80;font-weight:400;letter-spacing:-.7px;margin:0 0 10px}.quick-heading p{font-size:13px;line-height:1.65;color:#557281;max-width:70ch}.quick-heading .section-kicker{font-size:13px;color:#577280}.quick-phase{animation:content-enter .25s ease both}.setup-visual-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:20px 0 25px}.setup-visual-grid>div{padding:21px 19px;background:#f3f8fa;border:1px solid #dbe7ed;border-radius:12px;text-align:center}.setup-visual-grid>div>span{height:55px;display:flex;align-items:center;justify-content:center;color:#4a7483;margin-bottom:14px}.setup-visual-grid b{font-size:15px;font-weight:500;color:#52788d;display:block;margin-bottom:9px}.setup-visual-grid p{font-size:13px;line-height:1.7;color:#557280;max-width:28ch;margin:auto}.quick-confirm{display:flex;align-items:center;flex-direction:row;gap:13px;padding:15px 17px;border:1px solid #d6e4eb;border-radius:9px;background:#f7fafb;margin:18px 0 13px;font-size:13px;line-height:1.5;cursor:pointer;transition:background .2s,border-color .2s}.quick-confirm input{height:19px;width:19px;min-height:19px;flex:0 0 19px;margin:0;accent-color:#458e86}.quick-confirm>span{flex:1;color:#587381}.quick-confirm>svg{color:transparent;transform:scale(.7);transition:color .2s,transform .2s}.quick-confirm.checked{background:#edf6f1;border-color:#b8d6c7}.quick-confirm.checked>span{color:#4c7869}.quick-confirm.checked>svg{color:#4b7665;transform:scale(1)}.quick-change{font-size:13px;margin:11px 0;color:#567283}.quick-identity-fields{background:#f7fafb;padding:15px;border-radius:9px;margin:15px 0}.quick-identity-fields label{margin:0}.quick-checkin .button.full{margin-top:16px;min-height:46px}.quick-checkin .station-small-print{font-size:13px;margin:13px 0 0;line-height:1.7}.demo-capture-row>span{display:flex;align-items:center;gap:8px;font-size:13px;color:#567381}.quick-capture-progress>div{height:3px;background:#e3edf1;border-radius:3px;overflow:hidden}.quick-capture-progress p{font-size:13px;color:#537281;margin-top:8px}.device-readings-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.device-reading-card{border:1px solid #dce7ed;border-radius:11px;padding:15px 17px;background:#fff;min-width:0;transition:border-color .2s,background .2s}.device-reading-card.has-entry{border-color:#bdd6df;background:#fbfdfd}.device-tile-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.device-tile-top>div{display:flex;gap:7px;align-items:center;color:#527383}.device-tile-top h3{font-size:14px;font-weight:500;color:#4e7283}.device-tile-top>span{font-size:13px;color:#5a7282}.device-reading-card.has-entry .device-tile-top>span{color:#4e776e}.device-reading-content{display:flex;align-items:center;gap:16px;min-height:111px}.measurement-visual{width:140px;height:100px;flex:0 0 140px;display:block}.quick-value-input,.quick-pressure-inputs{display:flex;align-items:flex-end;gap:6px;flex:1;min-width:0}.quick-value-input>label,.quick-pressure-inputs>label{margin:0;gap:5px;font-size:13px;min-width:0;flex:1;color:#547182}.quick-value-input input,.quick-pressure-inputs input{width:100%;height:49px;background:#f5fafb;border:1px solid #cbdfe8;border-radius:7px;padding:7px 9px;font-size:28px;font-weight:400;color:#416e84;min-width:0;font-variant-numeric:tabular-nums}.quick-value-input input::placeholder,.quick-pressure-inputs input::placeholder{color:#bed1da}.quick-pressure-inputs input{font-size:24px;padding:7px}.quick-pressure-inputs>label{max-width:84px}.quick-unit{font-size:13px;color:#567385;flex-shrink:0;margin-bottom:13px}.pressure-divider{font-size:21px;color:#bed0da;margin-bottom:9px}.device-short-help{font-size:13px;line-height:1.65;color:#567280;margin:3px 0 8px}.device-reading-card details{font-size:13px;color:#567383;line-height:1.6}.device-reading-card summary{cursor:pointer;color:#537483;font-size:13px;list-style-position:inside}.device-reading-card ul{padding-left:15px;margin:10px 0 0}.device-reading-card li{padding:3px 0}.device-reading-card input[aria-invalid="true"]{border-color:#c67d86;background:#fff4f5}.temperature-site>b{font-size:13px;font-weight:500;color:#547181;white-space:nowrap}.temperature-site button{font-size:13px;color:#57717e;border:1px solid #dae7ec;border-radius:15px;padding:6px 12px;background:#f8fbfc}.quick-sleep{display:flex;align-items:center;gap:28px;background:#f2f6fb;border:1px solid #dce6ef;border-radius:13px;padding:22px 28px;margin:21px 0 28px}.quick-sleep>.measurement-visual{width:150px;height:115px;flex-basis:150px}.quick-sleep>div{flex:1;min-width:0}.quick-sleep h3,.quick-mood h3{font-size:18px;color:#577187;font-weight:400;margin-bottom:8px}.quick-sleep p{font-size:13px;line-height:1.6;color:#5a7286}.sleep-number{display:flex;align-items:center;gap:11px;margin:16px 0 10px}.sleep-number button{width:30px;height:30px;display:grid;place-items:center;border:1px solid #d4e1e9;border-radius:50%;color:#547282;background:#fff}.sleep-number input{width:86px;height:48px;border:0;background:#fff;border-radius:7px;font-size:28px;color:#547286;padding:7px 11px}.sleep-number>span{font-size:13px;color:#597284}.sleep-range{accent-color:#8d9fbc;height:4px!important;min-height:4px;padding:0;border:0;width:100%;margin:12px 0 0;cursor:pointer}.sleep-range.unselected{opacity:.6}.sleep-range-labels{display:flex;justify-content:space-between;color:#587082;font-size:13px;margin-top:8px}.quick-mood{padding:5px 0 12px}.wellbeing-faces{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:19px}.wellbeing-faces button{border:1px solid #dae6ec;border-radius:11px;padding:15px 8px;background:#fafcfd;color:#577182;display:flex;align-items:center;flex-direction:column;gap:5px;transition:background .2s,border-color .2s,transform .2s}.wellbeing-faces svg{height:55px;width:55px}.wellbeing-faces b{font-size:13px;font-weight:500}.wellbeing-faces span{font-size:13px;color:#5a7281}.wellbeing-faces button.selected{background:#edf6f2;border-color:#96c8b6;color:#4a7769;transform:translateY(-3px)}.wellbeing-faces button:hover{background:#f0f7f9}.quick-review-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin:22px 0}.quick-review-grid button{display:flex;align-items:flex-start;flex-direction:column;gap:10px;padding:18px;border:1px solid #dce7ed;border-radius:10px;background:#f8fbfc;text-align:left}.quick-review-grid button>span{font-size:13px;color:#567384}.quick-review-grid b{font-size:29px;font-weight:400;letter-spacing:-.6px;color:#507285}.quick-review-grid b small{font-size:13px;letter-spacing:0;color:#567284}.quick-review-grid button>small{font-size:13px;color:#537182;align-self:flex-end}.optional-session-details>summary{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;list-style:none}.quick-verification{display:flex;align-items:center;gap:9px;font-size:13px;color:#537664;padding:8px 0}.quick-complete{padding:30px 15px 20px}.completion-routine{display:flex;align-items:center;gap:17px;padding:22px;max-width:430px;margin:28px auto;border:1px solid #c8dfd4;border-radius:12px;background:#f3f9f6;color:#4f7767;text-align:left}.completion-routine>div{flex:1}.completion-routine b{display:block;font-size:18px;font-weight:400;color:#517768}.completion-routine small{display:block;font-size:13px;color:#567467;margin-top:7px}.quick-complete .button{margin-top:27px}.visual-indicator{opacity:.75}.measurement-visual.active .visual-indicator{animation:visual-measure 1s ease-in-out infinite}
-.profile-tabs .profile-history-link{margin-left:auto;font-size:13px!important;color:#507483;gap:5px}.profile-no-observation{display:flex;align-items:flex-start;gap:12px;padding:19px;background:#f0f7f4;border:1px solid #d5e5dc;border-radius:10px;color:#507666;margin:4px 0 20px}.profile-no-observation h3{font-size:14px;font-weight:400;color:#567567;margin-bottom:8px}.profile-no-observation p{font-size:13px;line-height:1.7;color:#577466}.profile-history-card{display:flex;gap:15px;align-items:center;width:100%;text-align:left;background:#f4f8fb;border:1px solid #dbe7ee;padding:20px;border-radius:11px;color:#547385;margin:22px 0 10px}.profile-history-card>span{flex-shrink:0;color:#507285}.profile-history-card>div{flex:1}.profile-history-card h3{font-size:17px;font-weight:400;color:#547385;margin-bottom:8px}.profile-history-card p{font-size:13px;line-height:1.7;color:#537182}.linked-measurements{margin-top:23px}.linked-measurements>h3{font-size:14px;font-weight:500;color:#567284;margin-bottom:7px}.linked-measurements>p{font-size:13px;color:#577283;margin-bottom:13px}.linked-measurements>button{display:flex;align-items:center;justify-content:space-between;gap:15px;width:100%;padding:17px 13px;background:#fff;border:1px solid #dce7ed;border-radius:9px;margin:8px 0;font-size:13px;color:#537384}.linked-measurements>button>span{display:flex;align-items:center;gap:10px}.linked-measurements>button>span:last-child{font-size:13px;color:#587282}.linked-measurements>button:hover{background:#f0f7f9}
-@keyframes visual-measure{50%{opacity:.2;transform:translateX(3px)}}
-@media(max-width:1250px){.top-right{gap:17px}.checkin-reminder-banner{gap:14px;padding:18px}.checkin-reminder-banner h2{font-size:20px}.measurement-visual{width:115px;flex-basis:115px}.quick-pressure-inputs>label{max-width:78px}.quick-checkin{padding-left:0;padding-right:0}.profile-tabs{gap:19px}.profile-tabs .profile-history-link{font-size:13px!important}}
-@media(max-width:800px){.checkin-reminder-banner{align-items:flex-start}.checkin-reminder-banner h2{font-size:20px}.reminder-actions .button{font-size:13px;padding:10px 12px}.quick-stepper{gap:9px}.quick-stepper button{font-size:13px;gap:7px}.device-reading-content{gap:9px}.measurement-visual{width:100px;height:84px;flex-basis:100px}.quick-pressure-inputs input{font-size:22px;padding:7px 5px}.quick-unit{font-size:13px}.setup-visual-grid{gap:10px}.setup-visual-grid>div{padding:18px 12px}.quick-sleep{padding:21px;gap:20px}.quick-sleep>.measurement-visual{width:115px;flex-basis:115px}.quick-sleep h3{font-size:16px}.wellbeing-faces{gap:8px}.profile-tabs .profile-history-link{font-size:13px!important}}
-@media(max-width:600px){.device-readings-grid{grid-template-columns:1fr}.measurement-visual{width:130px;height:90px;flex-basis:130px}.quick-value-input input{font-size:31px}.quick-pressure-inputs input{font-size:27px}.quick-pressure-inputs>label{max-width:95px}.device-reading-content{gap:15px;min-height:110px}.quick-heading h2{font-size:28px}.quick-review-grid{grid-template-columns:repeat(2,1fr)}.checkin-reminder-banner{flex-wrap:wrap}.reminder-bell{width:36px;height:36px;border-radius:9px}.checkin-reminder-banner>div:nth-child(2){flex-basis:75%}.reminder-actions{flex-direction:row;gap:14px;width:100%;padding-left:50px;flex-wrap:wrap}.reminder-all{display:none}.reminder-actions .text-button{font-size:13px}.quick-sleep{gap:10px}.quick-sleep>.measurement-visual{width:90px;flex-basis:90px}.setup-visual-grid>div{padding:15px 9px}.setup-visual-grid b{font-size:13px}.setup-visual-grid p{font-size:13px}.setup-visual-grid>div>span{height:40px;margin-bottom:10px}.setup-visual-grid svg{width:29px}.quick-heading p{font-size:13px}}
-@media(max-width:520px){.top-right{gap:10px}.notification-button{width:29px;height:29px}.notification-button svg{width:16px}.notification-button>b{font-size:13px;min-width:16px;height:16px}.top-right>time{display:none}.checkin-reminder-banner{padding:16px 14px;gap:11px;margin-bottom:22px}.checkin-reminder-banner h2{font-size:20px;line-height:1.25}.checkin-reminder-banner p{font-size:13px}.reminder-actions{padding-left:47px;gap:12px}.reminder-actions .button{font-size:13px;min-height:36px;padding:9px 11px}.reminder-actions .text-button{font-size:13px}.reminder-caption{font-size:13px}.quick-header{gap:12px;padding-bottom:14px}.quick-person b{font-size:14px}.quick-person small{font-size:13px}.quick-person .avatar{width:30px;height:30px;font-size:13px}.quick-operator{font-size:13px;max-width:100px;text-align:right;line-height:1.5}.quick-stepper{gap:5px;margin:17px 0 24px}.quick-stepper button{flex-direction:column;justify-content:flex-start;align-items:center;font-size:13px;gap:7px}.quick-stepper button>span{width:24px;height:24px;font-size:13px}.quick-heading{margin-bottom:19px}.quick-heading h2{font-size:27px}.quick-heading .section-kicker{font-size:13px}.setup-visual-grid{gap:6px;margin-bottom:19px}.setup-visual-grid>div{border-radius:9px;padding:14px 7px}.setup-visual-grid b{font-size:13px;margin-bottom:7px}.setup-visual-grid p{font-size:13px;line-height:1.65}.quick-confirm{font-size:13px;padding:13px 12px;gap:10px}.quick-confirm input{width:18px;height:18px;min-height:18px;flex-basis:18px}.quick-change{font-size:13px}.demo-capture-row>span{font-size:13px;line-height:1.6}.device-reading-card{padding:14px}.device-tile-top h3{font-size:14px}.device-short-help{font-size:13px}.device-reading-content{gap:13px}.measurement-visual{width:108px;flex-basis:108px;height:85px}.quick-pressure-inputs{gap:4px}.quick-pressure-inputs>label{max-width:78px}.quick-pressure-inputs input{font-size:23px}.quick-unit{font-size:13px}.temperature-site button{font-size:13px;padding:6px 11px}.quick-sleep{padding:17px;gap:8px;align-items:flex-start}.quick-sleep>.measurement-visual{width:65px;height:75px;flex-basis:65px;margin-top:6px}.quick-sleep h3{font-size:16px;line-height:1.35}.quick-sleep p{font-size:13px}.sleep-number{gap:7px}.sleep-number input{width:66px;font-size:26px;height:43px}.sleep-number>span{font-size:13px}.sleep-number button{width:25px;height:25px}.sleep-number svg{width:15px}.sleep-range-labels{font-size:13px}.quick-mood h3{font-size:16px}.wellbeing-faces{gap:5px}.wellbeing-faces button{padding:10px 3px;border-radius:8px}.wellbeing-faces svg{width:43px;height:43px}.wellbeing-faces b{font-size:13px}.wellbeing-faces span{font-size:13px}.quick-review-grid{gap:9px}.quick-review-grid button{padding:15px}.quick-review-grid b{font-size:25px}.quick-review-grid b small{font-size:13px}.quick-verification{font-size:13px}.optional-session-details>summary{font-size:13px;gap:6px}.profile-tabs .profile-history-link{font-size:13px!important;gap:4px}.profile-tabs .profile-history-link>svg:last-child{display:none}.profile-no-observation{padding:16px;gap:10px}.profile-no-observation h3{font-size:13px}.profile-no-observation p{font-size:13px}.profile-history-card{padding:17px;gap:13px}.profile-history-card h3{font-size:16px}.profile-history-card p{font-size:13px}.reminders-modal-title{gap:12px}.reminders-modal-title h2{font-size:23px}.reminder-list article{padding:15px 0;gap:11px}.reminder-list h3{font-size:14px}.reminder-list p{font-size:13px}.reminder-list small{font-size:13px}.reminder-slot-icon{width:33px;height:33px}.reminder-list .button{font-size:13px}.reminder-list .text-button{font-size:13px}}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
-.checkin-reminder-banner.upcoming{background:#edf5f8;border-color:#d0e3eb}.checkin-reminder-banner.upcoming .reminder-bell{background:#dfedf2;color:#517483}.checkin-reminder-banner.upcoming h2{color:#527283;font-size:20px}.checkin-reminder-banner.upcoming p,.checkin-reminder-banner.upcoming .reminder-caption{color:#547384}.checkin-reminder-banner.upcoming>.button{font-size:13px}@media(max-width:600px){.checkin-reminder-banner.upcoming>.button{margin-left:47px;font-size:13px}}
+.notification-button {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #d7e4ea;
+  border-radius: 50%;
+  position: relative;
+  color: #567382;
+  background: #f7fafb;
+}
+.notification-button > b {
+  position: absolute;
+  right: -4px;
+  top: -5px;
+  background: #b98244;
+  color: #fff;
+  border: 2px solid #fff;
+  min-width: 19px;
+  height: 19px;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 50%;
+}
+.notification-button:hover {
+  background: #eaf4f7;
+}
+.checkin-reminder-banner {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 20px 23px;
+  margin-bottom: 25px;
+  border: 1px solid #d7c4a5;
+  background: #fbf6ec;
+  border-radius: 12px;
+  color: #806b4c;
+  animation: content-enter 0.3s ease both;
+}
+.reminder-bell {
+  display: grid;
+  place-items: center;
+  width: 45px;
+  height: 45px;
+  border-radius: 12px;
+  background: #f2e8d4;
+  color: #866b3e;
+  flex-shrink: 0;
+}
+.checkin-reminder-banner > div:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+.reminder-caption {
+  font-size: 13px;
+  color: #7f6c4f;
+}
+.checkin-reminder-banner h2 {
+  font-size: 22px;
+  letter-spacing: -0.4px;
+  font-weight: 400;
+  color: #7c6b51;
+  margin: 5px 0 7px;
+}
+.checkin-reminder-banner p {
+  font-size: 13px;
+  color: #7c6a51;
+  line-height: 1.6;
+}
+.reminder-actions {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.reminder-actions .button {
+  background: #8c784e;
+  border-color: #8c784e;
+  font-size: 13px;
+}
+.reminder-actions .button:hover {
+  background: #786642;
+}
+.reminder-actions .text-button {
+  font-size: 13px;
+  color: #7f6a49;
+}
+.reminder-all {
+  font-size: 13px;
+  color: #7e6b51;
+  padding: 2px;
+}
+.reminders-modal-title {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  color: #547280;
+  margin: 4px 0 23px;
+}
+.reminders-modal-title h2 {
+  font-size: 25px;
+  font-weight: 400;
+  color: #50788b;
+  margin-bottom: 7px;
+}
+.reminders-modal-title p {
+  font-size: 13px;
+  color: #587382;
+}
+.reminder-list article {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 17px 0;
+  border-bottom: 1px solid #e0e9ee;
+}
+.reminder-slot-icon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  background: #f0f5f8;
+  border: 1px solid #dce7ed;
+  border-radius: 10px;
+  color: #557384;
+}
+.reminder-list article.due .reminder-slot-icon {
+  background: #faf1df;
+  border-color: #e6d6b7;
+  color: #816a41;
+}
+.reminder-list article > div:nth-child(2) {
+  flex: 1;
+}
+.reminder-list h3 {
+  font-size: 15px;
+  font-weight: 500;
+  color: #567384;
+}
+.reminder-list p {
+  font-size: 13px;
+  color: #587382;
+  margin: 5px 0;
+}
+.reminder-list small {
+  font-size: 13px;
+  color: #796b54;
+}
+.reminder-list article > div:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  align-items: center;
+}
+.reminder-list .button {
+  font-size: 13px;
+  min-height: 34px;
+  padding: 8px 13px;
+}
+.reminder-list .text-button {
+  font-size: 13px;
+}
+.reminders-modal-title + .reminder-list {
+  margin-bottom: 20px;
+}
+.station-small-print > svg {
+  vertical-align: middle;
+  margin-right: 4px;
+}
+.routine-slot.due {
+  background: #fcf6eb;
+  border-radius: 6px;
+  padding-left: 7px;
+  padding-right: 7px;
+  margin-top: 3px;
+}
+.routine-slot.due b {
+  color: #87683b;
+}
+.quick-checkin {
+  padding: 0 5px 6px;
+}
+.quick-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  padding: 0 0 17px;
+  border-bottom: 1px solid #e2ebef;
+}
+.quick-person {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.quick-person .avatar {
+  width: 34px;
+  height: 34px;
+  background: #e5f0f4;
+  color: #5d8396;
+}
+.quick-person b {
+  display: block;
+  font-size: 15px;
+  font-weight: 500;
+  color: #4b7186;
+}
+.quick-person small {
+  display: block;
+  font-size: 13px;
+  color: #557282;
+  margin-top: 5px;
+}
+.quick-operator {
+  font-size: 13px;
+  color: #587383;
+}
+.quick-stepper {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  margin: 20px 0 26px;
+}
+.quick-stepper button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  padding: 7px 0;
+  color: #567281;
+  text-align: left;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+.quick-stepper button > span {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border: 1px solid #d6e4eb;
+  border-radius: 50%;
+  font-size: 13px;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+.quick-stepper button.active {
+  color: #347b8e;
+}
+.quick-stepper button.active > span {
+  background: #347b8e;
+  border-color: #347b8e;
+  color: #fff;
+}
+.quick-stepper button.done {
+  color: #4b7868;
+}
+.quick-stepper button.done > span {
+  background: #e7f3ed;
+  border-color: #c3ddcf;
+}
+.quick-heading {
+  margin-bottom: 23px;
+}
+.quick-heading h2 {
+  font-size: 31px;
+  color: #426b80;
+  font-weight: 400;
+  letter-spacing: -0.7px;
+  margin: 0 0 10px;
+}
+.quick-heading p {
+  font-size: 13px;
+  line-height: 1.65;
+  color: #557281;
+  max-width: 70ch;
+}
+.quick-heading .section-kicker {
+  font-size: 13px;
+  color: #577280;
+}
+.quick-phase {
+  animation: content-enter 0.25s ease both;
+}
+.setup-visual-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin: 20px 0 25px;
+}
+.setup-visual-grid > div {
+  padding: 21px 19px;
+  background: #f3f8fa;
+  border: 1px solid #dbe7ed;
+  border-radius: 12px;
+  text-align: center;
+}
+.setup-visual-grid > div > span {
+  height: 55px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4a7483;
+  margin-bottom: 14px;
+}
+.setup-visual-grid b {
+  font-size: 15px;
+  font-weight: 500;
+  color: #52788d;
+  display: block;
+  margin-bottom: 9px;
+}
+.setup-visual-grid p {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #557280;
+  max-width: 28ch;
+  margin: auto;
+}
+.quick-confirm {
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  gap: 13px;
+  padding: 15px 17px;
+  border: 1px solid #d6e4eb;
+  border-radius: 9px;
+  background: #f7fafb;
+  margin: 18px 0 13px;
+  font-size: 13px;
+  line-height: 1.5;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+.quick-confirm input {
+  height: 19px;
+  width: 19px;
+  min-height: 19px;
+  flex: 0 0 19px;
+  margin: 0;
+  accent-color: #458e86;
+}
+.quick-confirm > span {
+  flex: 1;
+  color: #587381;
+}
+.quick-confirm > svg {
+  color: transparent;
+  transform: scale(0.7);
+  transition:
+    color 0.2s,
+    transform 0.2s;
+}
+.quick-confirm.checked {
+  background: #edf6f1;
+  border-color: #b8d6c7;
+}
+.quick-confirm.checked > span {
+  color: #4c7869;
+}
+.quick-confirm.checked > svg {
+  color: #4b7665;
+  transform: scale(1);
+}
+.quick-change {
+  font-size: 13px;
+  margin: 11px 0;
+  color: #567283;
+}
+.quick-identity-fields {
+  background: #f7fafb;
+  padding: 15px;
+  border-radius: 9px;
+  margin: 15px 0;
+}
+.quick-identity-fields label {
+  margin: 0;
+}
+.quick-checkin .button.full {
+  margin-top: 16px;
+  min-height: 46px;
+}
+.quick-checkin .station-small-print {
+  font-size: 13px;
+  margin: 13px 0 0;
+  line-height: 1.7;
+}
+.demo-capture-row > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #567381;
+}
+.quick-capture-progress > div {
+  height: 3px;
+  background: #e3edf1;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.quick-capture-progress p {
+  font-size: 13px;
+  color: #537281;
+  margin-top: 8px;
+}
+.device-readings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.device-reading-card {
+  border: 1px solid #dce7ed;
+  border-radius: 11px;
+  padding: 15px 17px;
+  background: #fff;
+  min-width: 0;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+.device-reading-card.has-entry {
+  border-color: #bdd6df;
+  background: #fbfdfd;
+}
+.device-tile-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.device-tile-top > div {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  color: #527383;
+}
+.device-tile-top h3 {
+  font-size: 14px;
+  font-weight: 500;
+  color: #4e7283;
+}
+.device-tile-top > span {
+  font-size: 13px;
+  color: #5a7282;
+}
+.device-reading-card.has-entry .device-tile-top > span {
+  color: #4e776e;
+}
+.device-reading-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 111px;
+}
+.measurement-visual {
+  width: 140px;
+  height: 100px;
+  flex: 0 0 140px;
+  display: block;
+}
+.quick-value-input,
+.quick-pressure-inputs {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+.quick-value-input > label,
+.quick-pressure-inputs > label {
+  margin: 0;
+  gap: 5px;
+  font-size: 13px;
+  min-width: 0;
+  flex: 1;
+  color: #547182;
+}
+.quick-value-input input,
+.quick-pressure-inputs input {
+  width: 100%;
+  height: 49px;
+  background: #f5fafb;
+  border: 1px solid #cbdfe8;
+  border-radius: 7px;
+  padding: 7px 9px;
+  font-size: 28px;
+  font-weight: 400;
+  color: #416e84;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+.quick-value-input input::placeholder,
+.quick-pressure-inputs input::placeholder {
+  color: #bed1da;
+}
+.quick-pressure-inputs input {
+  font-size: 24px;
+  padding: 7px;
+}
+.quick-pressure-inputs > label {
+  max-width: 84px;
+}
+.quick-unit {
+  font-size: 13px;
+  color: #567385;
+  flex-shrink: 0;
+  margin-bottom: 13px;
+}
+.pressure-divider {
+  font-size: 21px;
+  color: #bed0da;
+  margin-bottom: 9px;
+}
+.device-short-help {
+  font-size: 13px;
+  line-height: 1.65;
+  color: #567280;
+  margin: 3px 0 8px;
+}
+.device-reading-card details {
+  font-size: 13px;
+  color: #567383;
+  line-height: 1.6;
+}
+.device-reading-card summary {
+  cursor: pointer;
+  color: #537483;
+  font-size: 13px;
+  list-style-position: inside;
+}
+.device-reading-card ul {
+  padding-left: 15px;
+  margin: 10px 0 0;
+}
+.device-reading-card li {
+  padding: 3px 0;
+}
+.device-reading-card input[aria-invalid='true'] {
+  border-color: #c67d86;
+  background: #fff4f5;
+}
+.temperature-site > b {
+  font-size: 13px;
+  font-weight: 500;
+  color: #547181;
+  white-space: nowrap;
+}
+.temperature-site button {
+  font-size: 13px;
+  color: #57717e;
+  border: 1px solid #dae7ec;
+  border-radius: 15px;
+  padding: 6px 12px;
+  background: #f8fbfc;
+}
+.quick-sleep {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  background: #f2f6fb;
+  border: 1px solid #dce6ef;
+  border-radius: 13px;
+  padding: 22px 28px;
+  margin: 21px 0 28px;
+}
+.quick-sleep > .measurement-visual {
+  width: 150px;
+  height: 115px;
+  flex-basis: 150px;
+}
+.quick-sleep > div {
+  flex: 1;
+  min-width: 0;
+}
+.quick-sleep h3,
+.quick-mood h3 {
+  font-size: 18px;
+  color: #577187;
+  font-weight: 400;
+  margin-bottom: 8px;
+}
+.quick-sleep p {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #5a7286;
+}
+.sleep-number {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin: 16px 0 10px;
+}
+.sleep-number button {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #d4e1e9;
+  border-radius: 50%;
+  color: #547282;
+  background: #fff;
+}
+.sleep-number input {
+  width: 86px;
+  height: 48px;
+  border: 0;
+  background: #fff;
+  border-radius: 7px;
+  font-size: 28px;
+  color: #547286;
+  padding: 7px 11px;
+}
+.sleep-number > span {
+  font-size: 13px;
+  color: #597284;
+}
+.sleep-range {
+  accent-color: #8d9fbc;
+  height: 4px !important;
+  min-height: 4px;
+  padding: 0;
+  border: 0;
+  width: 100%;
+  margin: 12px 0 0;
+  cursor: pointer;
+}
+.sleep-range.unselected {
+  opacity: 0.6;
+}
+.sleep-range-labels {
+  display: flex;
+  justify-content: space-between;
+  color: #587082;
+  font-size: 13px;
+  margin-top: 8px;
+}
+.quick-mood {
+  padding: 5px 0 12px;
+}
+.wellbeing-faces {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-top: 19px;
+}
+.wellbeing-faces button {
+  border: 1px solid #dae6ec;
+  border-radius: 11px;
+  padding: 15px 8px;
+  background: #fafcfd;
+  color: #577182;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 5px;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    transform 0.2s;
+}
+.wellbeing-faces svg {
+  height: 55px;
+  width: 55px;
+}
+.wellbeing-faces b {
+  font-size: 13px;
+  font-weight: 500;
+}
+.wellbeing-faces span {
+  font-size: 13px;
+  color: #5a7281;
+}
+.wellbeing-faces button.selected {
+  background: #edf6f2;
+  border-color: #96c8b6;
+  color: #4a7769;
+  transform: translateY(-3px);
+}
+.wellbeing-faces button:hover {
+  background: #f0f7f9;
+}
+.quick-review-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 11px;
+  margin: 22px 0;
+}
+.quick-review-grid button {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid #dce7ed;
+  border-radius: 10px;
+  background: #f8fbfc;
+  text-align: left;
+}
+.quick-review-grid button > span {
+  font-size: 13px;
+  color: #567384;
+}
+.quick-review-grid b {
+  font-size: 29px;
+  font-weight: 400;
+  letter-spacing: -0.6px;
+  color: #507285;
+}
+.quick-review-grid b small {
+  font-size: 13px;
+  letter-spacing: 0;
+  color: #567284;
+}
+.quick-review-grid button > small {
+  font-size: 13px;
+  color: #537182;
+  align-self: flex-end;
+}
+.optional-session-details > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  list-style: none;
+}
+.quick-verification {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  color: #537664;
+  padding: 8px 0;
+}
+.quick-complete {
+  padding: 30px 15px 20px;
+}
+.completion-routine {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  padding: 22px;
+  max-width: 430px;
+  margin: 28px auto;
+  border: 1px solid #c8dfd4;
+  border-radius: 12px;
+  background: #f3f9f6;
+  color: #4f7767;
+  text-align: left;
+}
+.completion-routine > div {
+  flex: 1;
+}
+.completion-routine b {
+  display: block;
+  font-size: 18px;
+  font-weight: 400;
+  color: #517768;
+}
+.completion-routine small {
+  display: block;
+  font-size: 13px;
+  color: #567467;
+  margin-top: 7px;
+}
+.quick-complete .button {
+  margin-top: 27px;
+}
+.visual-indicator {
+  opacity: 0.75;
+}
+.measurement-visual.active .visual-indicator {
+  animation: visual-measure 1s ease-in-out infinite;
+}
+.profile-tabs .profile-history-link {
+  margin-left: auto;
+  font-size: 13px !important;
+  color: #507483;
+  gap: 5px;
+}
+.profile-no-observation {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 19px;
+  background: #f0f7f4;
+  border: 1px solid #d5e5dc;
+  border-radius: 10px;
+  color: #507666;
+  margin: 4px 0 20px;
+}
+.profile-no-observation h3 {
+  font-size: 14px;
+  font-weight: 400;
+  color: #567567;
+  margin-bottom: 8px;
+}
+.profile-no-observation p {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #577466;
+}
+.profile-history-card {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  background: #f4f8fb;
+  border: 1px solid #dbe7ee;
+  padding: 20px;
+  border-radius: 11px;
+  color: #547385;
+  margin: 22px 0 10px;
+}
+.profile-history-card > span {
+  flex-shrink: 0;
+  color: #507285;
+}
+.profile-history-card > div {
+  flex: 1;
+}
+.profile-history-card h3 {
+  font-size: 17px;
+  font-weight: 400;
+  color: #547385;
+  margin-bottom: 8px;
+}
+.profile-history-card p {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #537182;
+}
+.linked-measurements {
+  margin-top: 23px;
+}
+.linked-measurements > h3 {
+  font-size: 14px;
+  font-weight: 500;
+  color: #567284;
+  margin-bottom: 7px;
+}
+.linked-measurements > p {
+  font-size: 13px;
+  color: #577283;
+  margin-bottom: 13px;
+}
+.linked-measurements > button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  width: 100%;
+  padding: 17px 13px;
+  background: #fff;
+  border: 1px solid #dce7ed;
+  border-radius: 9px;
+  margin: 8px 0;
+  font-size: 13px;
+  color: #537384;
+}
+.linked-measurements > button > span {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.linked-measurements > button > span:last-child {
+  font-size: 13px;
+  color: #587282;
+}
+.linked-measurements > button:hover {
+  background: #f0f7f9;
+}
+@keyframes visual-measure {
+  50% {
+    opacity: 0.2;
+    transform: translateX(3px);
+  }
+}
+@media (max-width: 1250px) {
+  .top-right {
+    gap: 17px;
+  }
+  .checkin-reminder-banner {
+    gap: 14px;
+    padding: 18px;
+  }
+  .checkin-reminder-banner h2 {
+    font-size: 20px;
+  }
+  .measurement-visual {
+    width: 115px;
+    flex-basis: 115px;
+  }
+  .quick-pressure-inputs > label {
+    max-width: 78px;
+  }
+  .quick-checkin {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .profile-tabs {
+    gap: 19px;
+  }
+  .profile-tabs .profile-history-link {
+    font-size: 13px !important;
+  }
+}
+@media (max-width: 800px) {
+  .checkin-reminder-banner {
+    align-items: flex-start;
+  }
+  .checkin-reminder-banner h2 {
+    font-size: 20px;
+  }
+  .reminder-actions .button {
+    font-size: 13px;
+    padding: 10px 12px;
+  }
+  .quick-stepper {
+    gap: 9px;
+  }
+  .quick-stepper button {
+    font-size: 13px;
+    gap: 7px;
+  }
+  .device-reading-content {
+    gap: 9px;
+  }
+  .measurement-visual {
+    width: 100px;
+    height: 84px;
+    flex-basis: 100px;
+  }
+  .quick-pressure-inputs input {
+    font-size: 22px;
+    padding: 7px 5px;
+  }
+  .quick-unit {
+    font-size: 13px;
+  }
+  .setup-visual-grid {
+    gap: 10px;
+  }
+  .setup-visual-grid > div {
+    padding: 18px 12px;
+  }
+  .quick-sleep {
+    padding: 21px;
+    gap: 20px;
+  }
+  .quick-sleep > .measurement-visual {
+    width: 115px;
+    flex-basis: 115px;
+  }
+  .quick-sleep h3 {
+    font-size: 16px;
+  }
+  .wellbeing-faces {
+    gap: 8px;
+  }
+  .profile-tabs .profile-history-link {
+    font-size: 13px !important;
+  }
+}
+@media (max-width: 600px) {
+  .device-readings-grid {
+    grid-template-columns: 1fr;
+  }
+  .measurement-visual {
+    width: 130px;
+    height: 90px;
+    flex-basis: 130px;
+  }
+  .quick-value-input input {
+    font-size: 31px;
+  }
+  .quick-pressure-inputs input {
+    font-size: 27px;
+  }
+  .quick-pressure-inputs > label {
+    max-width: 95px;
+  }
+  .device-reading-content {
+    gap: 15px;
+    min-height: 110px;
+  }
+  .quick-heading h2 {
+    font-size: 28px;
+  }
+  .quick-review-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .checkin-reminder-banner {
+    flex-wrap: wrap;
+  }
+  .reminder-bell {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+  }
+  .checkin-reminder-banner > div:nth-child(2) {
+    flex-basis: 75%;
+  }
+  .reminder-actions {
+    flex-direction: row;
+    gap: 14px;
+    width: 100%;
+    padding-left: 50px;
+    flex-wrap: wrap;
+  }
+  .reminder-all {
+    display: none;
+  }
+  .reminder-actions .text-button {
+    font-size: 13px;
+  }
+  .quick-sleep {
+    gap: 10px;
+  }
+  .quick-sleep > .measurement-visual {
+    width: 90px;
+    flex-basis: 90px;
+  }
+  .setup-visual-grid > div {
+    padding: 15px 9px;
+  }
+  .setup-visual-grid b {
+    font-size: 13px;
+  }
+  .setup-visual-grid p {
+    font-size: 13px;
+  }
+  .setup-visual-grid > div > span {
+    height: 40px;
+    margin-bottom: 10px;
+  }
+  .setup-visual-grid svg {
+    width: 29px;
+  }
+  .quick-heading p {
+    font-size: 13px;
+  }
+}
+@media (max-width: 520px) {
+  .top-right {
+    gap: 10px;
+  }
+  .notification-button {
+    width: 29px;
+    height: 29px;
+  }
+  .notification-button svg {
+    width: 16px;
+  }
+  .notification-button > b {
+    font-size: 13px;
+    min-width: 16px;
+    height: 16px;
+  }
+  .top-right > time {
+    display: none;
+  }
+  .checkin-reminder-banner {
+    padding: 16px 14px;
+    gap: 11px;
+    margin-bottom: 22px;
+  }
+  .checkin-reminder-banner h2 {
+    font-size: 20px;
+    line-height: 1.25;
+  }
+  .checkin-reminder-banner p {
+    font-size: 13px;
+  }
+  .reminder-actions {
+    padding-left: 47px;
+    gap: 12px;
+  }
+  .reminder-actions .button {
+    font-size: 13px;
+    min-height: 36px;
+    padding: 9px 11px;
+  }
+  .reminder-actions .text-button {
+    font-size: 13px;
+  }
+  .reminder-caption {
+    font-size: 13px;
+  }
+  .quick-header {
+    gap: 12px;
+    padding-bottom: 14px;
+  }
+  .quick-person b {
+    font-size: 14px;
+  }
+  .quick-person small {
+    font-size: 13px;
+  }
+  .quick-person .avatar {
+    width: 30px;
+    height: 30px;
+    font-size: 13px;
+  }
+  .quick-operator {
+    font-size: 13px;
+    max-width: 100px;
+    text-align: right;
+    line-height: 1.5;
+  }
+  .quick-stepper {
+    gap: 5px;
+    margin: 17px 0 24px;
+  }
+  .quick-stepper button {
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    font-size: 13px;
+    gap: 7px;
+  }
+  .quick-stepper button > span {
+    width: 24px;
+    height: 24px;
+    font-size: 13px;
+  }
+  .quick-heading {
+    margin-bottom: 19px;
+  }
+  .quick-heading h2 {
+    font-size: 27px;
+  }
+  .quick-heading .section-kicker {
+    font-size: 13px;
+  }
+  .setup-visual-grid {
+    gap: 6px;
+    margin-bottom: 19px;
+  }
+  .setup-visual-grid > div {
+    border-radius: 9px;
+    padding: 14px 7px;
+  }
+  .setup-visual-grid b {
+    font-size: 13px;
+    margin-bottom: 7px;
+  }
+  .setup-visual-grid p {
+    font-size: 13px;
+    line-height: 1.65;
+  }
+  .quick-confirm {
+    font-size: 13px;
+    padding: 13px 12px;
+    gap: 10px;
+  }
+  .quick-confirm input {
+    width: 18px;
+    height: 18px;
+    min-height: 18px;
+    flex-basis: 18px;
+  }
+  .quick-change {
+    font-size: 13px;
+  }
+  .demo-capture-row > span {
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .device-reading-card {
+    padding: 14px;
+  }
+  .device-tile-top h3 {
+    font-size: 14px;
+  }
+  .device-short-help {
+    font-size: 13px;
+  }
+  .device-reading-content {
+    gap: 13px;
+  }
+  .measurement-visual {
+    width: 108px;
+    flex-basis: 108px;
+    height: 85px;
+  }
+  .quick-pressure-inputs {
+    gap: 4px;
+  }
+  .quick-pressure-inputs > label {
+    max-width: 78px;
+  }
+  .quick-pressure-inputs input {
+    font-size: 23px;
+  }
+  .quick-unit {
+    font-size: 13px;
+  }
+  .temperature-site button {
+    font-size: 13px;
+    padding: 6px 11px;
+  }
+  .quick-sleep {
+    padding: 17px;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .quick-sleep > .measurement-visual {
+    width: 65px;
+    height: 75px;
+    flex-basis: 65px;
+    margin-top: 6px;
+  }
+  .quick-sleep h3 {
+    font-size: 16px;
+    line-height: 1.35;
+  }
+  .quick-sleep p {
+    font-size: 13px;
+  }
+  .sleep-number {
+    gap: 7px;
+  }
+  .sleep-number input {
+    width: 66px;
+    font-size: 26px;
+    height: 43px;
+  }
+  .sleep-number > span {
+    font-size: 13px;
+  }
+  .sleep-number button {
+    width: 25px;
+    height: 25px;
+  }
+  .sleep-number svg {
+    width: 15px;
+  }
+  .sleep-range-labels {
+    font-size: 13px;
+  }
+  .quick-mood h3 {
+    font-size: 16px;
+  }
+  .wellbeing-faces {
+    gap: 5px;
+  }
+  .wellbeing-faces button {
+    padding: 10px 3px;
+    border-radius: 8px;
+  }
+  .wellbeing-faces svg {
+    width: 43px;
+    height: 43px;
+  }
+  .wellbeing-faces b {
+    font-size: 13px;
+  }
+  .wellbeing-faces span {
+    font-size: 13px;
+  }
+  .quick-review-grid {
+    gap: 9px;
+  }
+  .quick-review-grid button {
+    padding: 15px;
+  }
+  .quick-review-grid b {
+    font-size: 25px;
+  }
+  .quick-review-grid b small {
+    font-size: 13px;
+  }
+  .quick-verification {
+    font-size: 13px;
+  }
+  .optional-session-details > summary {
+    font-size: 13px;
+    gap: 6px;
+  }
+  .profile-tabs .profile-history-link {
+    font-size: 13px !important;
+    gap: 4px;
+  }
+  .profile-tabs .profile-history-link > svg:last-child {
+    display: none;
+  }
+  .profile-no-observation {
+    padding: 16px;
+    gap: 10px;
+  }
+  .profile-no-observation h3 {
+    font-size: 13px;
+  }
+  .profile-no-observation p {
+    font-size: 13px;
+  }
+  .profile-history-card {
+    padding: 17px;
+    gap: 13px;
+  }
+  .profile-history-card h3 {
+    font-size: 16px;
+  }
+  .profile-history-card p {
+    font-size: 13px;
+  }
+  .reminders-modal-title {
+    gap: 12px;
+  }
+  .reminders-modal-title h2 {
+    font-size: 23px;
+  }
+  .reminder-list article {
+    padding: 15px 0;
+    gap: 11px;
+  }
+  .reminder-list h3 {
+    font-size: 14px;
+  }
+  .reminder-list p {
+    font-size: 13px;
+  }
+  .reminder-list small {
+    font-size: 13px;
+  }
+  .reminder-slot-icon {
+    width: 33px;
+    height: 33px;
+  }
+  .reminder-list .button {
+    font-size: 13px;
+  }
+  .reminder-list .text-button {
+    font-size: 13px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+.checkin-reminder-banner.upcoming {
+  background: #edf5f8;
+  border-color: #d0e3eb;
+}
+.checkin-reminder-banner.upcoming .reminder-bell {
+  background: #dfedf2;
+  color: #517483;
+}
+.checkin-reminder-banner.upcoming h2 {
+  color: #527283;
+  font-size: 20px;
+}
+.checkin-reminder-banner.upcoming p,
+.checkin-reminder-banner.upcoming .reminder-caption {
+  color: #547384;
+}
+.checkin-reminder-banner.upcoming > .button {
+  font-size: 13px;
+}
+@media (max-width: 600px) {
+  .checkin-reminder-banner.upcoming > .button {
+    margin-left: 47px;
+    font-size: 13px;
+  }
+}

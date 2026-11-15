@@ -1,9 +1,14 @@
 .env
 .env.*
 !.env.example
+!backend/.env.e2e.example
 *.log
 .claude/
 .vscode/
 .idea/
 Thumbs.db
 node_modules/
+cypress/videos/
+cypress/screenshots/
+.vercel
+.env*

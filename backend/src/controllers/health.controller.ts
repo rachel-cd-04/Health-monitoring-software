@@ -1,7 +1,5 @@
-import { type NextFunction, type Request, type Response } from 'express';
-import { z } from 'zod';
+import { type Request, type Response } from 'express';
 import { prisma } from '../db/client.js';
-import { type AuthRequest } from '../middleware/auth.js';
 
 export async function healthController(_req: Request, res: Response) {
   try {
