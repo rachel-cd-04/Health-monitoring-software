@@ -69,7 +69,7 @@ The fixed check-in date is the current UTC date, and the emergency and step UUID
 
 ## GitHub Actions and frontend deployment
 
-`.github/workflows/frontend-deploy.yml` runs frontend lint, formatting, build and API-stubbed Cypress checks on pull requests to `main`. On a push to `main`, it additionally migrates/seeds the dedicated Supabase test project and runs `supabase.cy.js`; only then does it deploy the frontend to Vercel. A failed check prevents deployment.
+`.github/workflows/frontend-deploy.yml` runs frontend lint, formatting and build on pull requests to `main`. On a push to `main`, it deploys the frontend to Vercel after those checks pass. Cypress remains available for local runs described above; it is not currently run by this workflow.
 
 Configure these GitHub Actions secrets:
 
@@ -82,9 +82,9 @@ Configure these GitHub Actions secrets:
 | `VERCEL_ORG_ID` | Vercel team/account ID, shared by its projects. |
 | `VERCEL_FRONTEND_PROJECT_ID` | The separate Vercel project ID for the frontend. |
 
-The existing backend workflow keeps its `VERCEL_PROJECT_ID`; do not replace it with the frontend ID. Create a frontend Vercel project with root directory `frontend`, then save its ID as `VERCEL_FRONTEND_PROJECT_ID`. The frontend Vercel project's production environment must define `VITE_API_URL` as the public URL of the deployed backend API. This is a public API address, not a Supabase credential. The frontend must never receive Supabase database credentials or a Supabase service-role key.
+The backend workflow keeps its own `VERCEL_PROJECT_ID`; do not replace it with the frontend ID. Create a separate frontend Vercel project with root directory `frontend`, then save its ID as `VERCEL_FRONTEND_PROJECT_ID`. Each deployment workflow explicitly selects the `vercel.json` inside its own project directory so the root monorepo configuration does not turn a single-project deployment into a multi-service build. The frontend Vercel project's production environment must define `VITE_API_URL` as the public URL of the deployed backend API. This is a public API address, not a Supabase credential. The frontend must never receive Supabase database credentials or a Supabase service-role key.
 
-Pull requests from forks do not run the Supabase integration job because GitHub does not expose repository secrets to them; they still run the API-stubbed browser suite. Pushes to `main` require the dedicated Supabase and frontend Vercel secrets before deployment can proceed.
+The frontend workflow requires `VERCEL_TOKEN`, `VERCEL_ORG_ID` and `VERCEL_FRONTEND_PROJECT_ID` on pushes to `main`. The backend workflow uses its separate Vercel project ID and database secrets for migrations and deployment.
 
 ## Coverage boundary
 
