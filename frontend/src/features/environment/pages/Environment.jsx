@@ -1,13 +1,15 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import {
   LineChart,
   Line,
+  BarChart,
+  Bar,
+  Cell,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
-  Legend,
   ReferenceLine,
 } from 'recharts';
 import {
@@ -20,43 +22,61 @@ import {
   BookOpen,
   Footprints,
   Info,
+  Sun,
+  ShieldHalf,
+  Activity,
 } from 'lucide-react';
-import { crew, dateLabel, timeLabel, number, DAY_MS } from '../../crew/models/crewModel.js';
+import { dateLabel, timeLabel, number } from '../../crew/models/crewModel.js';
+import { cabinSeries, cabinReference } from '../models/envData.js';
 import {
-  locations,
-  doseHistory,
-  personalDose,
-  evaLog,
-  cabinSeries,
-  cabinReference,
-  environmentSignals,
   DOSE_UNIT,
-} from '../models/envData.js';
+  RATE_UNIT,
+  eventLabel,
+  locationLabel,
+  sourceLabel,
+} from '../models/radiation.js';
 import { SignalCard } from '../../alerts/components/Signals.jsx';
-import { LockedPanel } from '../../auth/components/AccessUI.jsx';
 
-// Categorical order validated with the dataviz palette script (light surface). Contrast relief: table view below.
-const series = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4'];
 const tick = { fontSize: 12, fill: '#5a6f7c' };
+const DOSE_COLOR = '#2a78d6';
+const EVENT_COLOR = '#eb6834';
+const mSv = (v, digits = 2) => (v == null ? '—' : Number(v).toFixed(digits));
+const stamp = (t) => `${dateLabel(t)} · ${timeLabel(t)} UTC`;
+const TIMELINE_ICON = { solar_particle_event: Sun, shelter_period: ShieldHalf, eva: Footprints };
 
-export default function Environment({ onRisk, now, canView = () => true, onUnlock }) {
-  const [person, setPerson] = useState(crew[0].id);
-  const dayBucket = Math.floor(now / DAY_MS);
+/** Empty / loading / error states for the radiation panels (the record comes from the API). */
+function RadiationState({ status, apiConfigured }) {
+  const text = !apiConfigured
+    ? 'Radiation data comes from the health API. Set VITE_API_URL to show it.'
+    : status === 'loading'
+      ? 'Loading the radiation record…'
+      : status === 'error'
+        ? 'Could not load the radiation record from the health API.'
+        : 'No radiation records yet. Run the backend seed to load the simulated mission record.';
+  return <p className="muted rad-state">{text}</p>;
+}
+
+export default function Environment({
+  onRisk,
+  now,
+  radiation,
+  radiationStatus = 'ready',
+  apiConfigured = true,
+  signals = [],
+}) {
   const halfHourBucket = Math.floor(now / 1800000);
-  const rows = useMemo(() => doseHistory(dayBucket * DAY_MS, 7), [dayBucket]);
   const cabin = useMemo(() => cabinSeries(halfHourBucket * 1800000), [halfHourBucket]);
-  const signals = useMemo(() => environmentSignals(dayBucket * DAY_MS), [dayBucket]);
   const latestCabin = cabin.at(-1);
-  const dose = personalDose(person, now);
-  const evas = evaLog.filter((e) => e.crewId === person);
   const range = (k) => [Math.min(...cabin.map((c) => c[k])), Math.max(...cabin.map((c) => c[k]))];
-  const total = (id) => rows.reduce((s, r) => s + r[id], 0);
   const cabinTiles = [
     ['temp', Thermometer],
     ['pressure', Gauge],
     ['co2', Wind],
     ['humidity', Droplets],
   ];
+  const rad = radiation || { empty: true };
+  const daily30 = rad.empty ? [] : rad.daily.slice(-30);
+  const ready = !rad.empty;
   return (
     <section className="environment-view">
       <div className="overview-heading">
@@ -71,9 +91,9 @@ export default function Environment({ onRisk, now, canView = () => true, onUnloc
       <div className="synthetic-banner" role="note">
         <Database size={18} />
         <div>
-          <b>Synthetic data — no instrument connected.</b> Values are generated for this
-          demonstration and their magnitudes are illustrative. An operational version would read
-          calibrated dosimeters and cabin sensors.
+          <b>Simulated data — no instrument connected.</b> The radiation record is served by the
+          health API and marked as simulated; cabin air is generated in the app. Magnitudes are
+          illustrative. An operational version would read calibrated dosimeters and cabin sensors.
         </div>
       </div>
 
@@ -91,172 +111,222 @@ export default function Environment({ onRisk, now, canView = () => true, onUnloc
             <div>
               <h2>
                 <Radiation size={18} />
-                Absorbed dose by location
+                Cabin dose by day
               </h2>
-              <p>Daily totals · {DOSE_UNIT} · last 7 UTC days</p>
+              <p>
+                Daily dose equivalent · {DOSE_UNIT} · last {daily30.length || 30} UTC days
+              </p>
             </div>
             <button className="text-link" onClick={() => onRisk('radiation')}>
               <BookOpen size={14} />
               Radiation risk · NASA
             </button>
           </div>
-          <div
-            className="env-chart"
-            role="img"
-            aria-label="Daily absorbed dose for five locations over seven days. A simulated solar particle event raises dose two days ago. Values are listed in the table below."
-          >
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={rows} margin={{ top: 24, right: 24, left: 0, bottom: 4 }}>
-                <CartesianGrid stroke="#e3eaee" vertical={false} />
-                <XAxis
-                  dataKey="time"
-                  type="number"
-                  domain={['dataMin', 'dataMax']}
-                  ticks={rows.map((r) => r.time)}
-                  tickFormatter={dateLabel}
-                  tick={tick}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis tick={tick} axisLine={false} tickLine={false} width={52} />
-                {rows
-                  .filter((r) => r.event)
-                  .map((r) => (
-                    <ReferenceLine
-                      key={r.time}
-                      x={r.time}
-                      stroke="#8a5a12"
-                      strokeDasharray="4 4"
-                      label={{
-                        value: 'Simulated solar event',
-                        position: 'top',
-                        fill: '#7a4f10',
-                        fontSize: 12,
-                      }}
+          {!ready ? (
+            <RadiationState status={radiationStatus} apiConfigured={apiConfigured} />
+          ) : (
+            <>
+              <div
+                className="env-chart"
+                role="img"
+                aria-label={`Daily cabin dose over the last ${daily30.length} days. Days with a solar particle event are highlighted. Values are listed in the records table below.`}
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={daily30} margin={{ top: 16, right: 16, left: 0, bottom: 4 }}>
+                    <CartesianGrid stroke="#e3eaee" vertical={false} />
+                    <XAxis
+                      dataKey="time"
+                      tickFormatter={dateLabel}
+                      tick={tick}
+                      axisLine={false}
+                      tickLine={false}
+                      minTickGap={24}
                     />
-                  ))}
-                <Tooltip
-                  labelFormatter={(t) => dateLabel(t) + ' (UTC day)'}
-                  formatter={(v, k) => [
-                    `${v} ${DOSE_UNIT}`,
-                    locations.find((l) => l.id === k)?.name,
-                  ]}
-                  contentStyle={{ borderRadius: 10, border: '1px solid #dbe4ea', fontSize: 13 }}
-                />
-                {locations.map((l, i) => (
-                  <Line
-                    key={l.id}
-                    dataKey={l.id}
-                    name={l.name}
-                    stroke={series[i]}
-                    strokeWidth={2}
-                    dot={{ r: 4, strokeWidth: 2, fill: '#fff' }}
-                    activeDot={{ r: 6 }}
-                    isAnimationActive={false}
-                  />
-                ))}
-                <Legend
-                  iconType="plainline"
-                  wrapperStyle={{ fontSize: 13, paddingTop: 8 }}
-                  formatter={(v) => <span style={{ color: 'var(--ink-2)' }}>{v}</span>}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-          <table className="env-table">
-            <thead>
-              <tr>
-                <th>Location</th>
-                <th>Instrument</th>
-                <th>Today</th>
-                <th>7-day total</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {locations.map((l, i) => {
-                const today = rows.at(-1)[l.id];
-                return (
-                  <tr key={l.id}>
-                    <td>
-                      <span className="series-key" style={{ '--c': series[i] }} />
-                      {l.name}
-                    </td>
-                    <td>{l.instrument}</td>
-                    <td>
-                      <b>{today}</b> {DOSE_UNIT}
-                    </td>
-                    <td>{number(total(l.id) / 1000)} mGy</td>
-                    <td>
-                      <span className="data-status">Synthetic</span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                    <YAxis tick={tick} axisLine={false} tickLine={false} width={44} />
+                    <Tooltip
+                      labelFormatter={(t) => dateLabel(t) + ' (UTC day)'}
+                      formatter={(v, _k, item) => [
+                        `${mSv(v, 3)} ${DOSE_UNIT}${item.payload.spe ? ' · solar particle event' : ''}`,
+                        'Cabin dose',
+                      ]}
+                      contentStyle={{ borderRadius: 10, border: '1px solid #dbe4ea', fontSize: 13 }}
+                    />
+                    <Bar dataKey="dose" radius={[4, 4, 0, 0]} isAnimationActive={false}>
+                      {daily30.map((d) => (
+                        <Cell key={d.time} fill={d.spe ? EVENT_COLOR : DOSE_COLOR} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="rad-legend">
+                <span>
+                  <i style={{ background: DOSE_COLOR }} />
+                  Background (galactic cosmic rays + trapped protons)
+                </span>
+                <span>
+                  <i style={{ background: EVENT_COLOR }} />
+                  Day with a solar particle event
+                </span>
+              </div>
+
+              <h3 className="rad-subtitle">
+                <Activity size={16} />
+                Dose rate · last 24 h <small>{RATE_UNIT}</small>
+              </h3>
+              <div className="env-chart small">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={rad.rates} margin={{ top: 8, right: 16, left: 0, bottom: 4 }}>
+                    <CartesianGrid stroke="#e3eaee" vertical={false} />
+                    <XAxis
+                      dataKey="time"
+                      type="number"
+                      domain={['dataMin', 'dataMax']}
+                      tickFormatter={timeLabel}
+                      tick={tick}
+                      axisLine={false}
+                      tickLine={false}
+                      minTickGap={32}
+                    />
+                    <YAxis tick={tick} axisLine={false} tickLine={false} width={44} />
+                    {rad.currentRate && (
+                      <ReferenceLine
+                        y={rad.currentRate.rateUsvH}
+                        stroke="#9fb3bf"
+                        strokeDasharray="4 4"
+                      />
+                    )}
+                    <Tooltip
+                      labelFormatter={(t) => timeLabel(t) + ' UTC'}
+                      formatter={(v, _k, item) => [
+                        `${v} ${RATE_UNIT}`,
+                        item.payload.radiationType,
+                      ]}
+                      contentStyle={{ borderRadius: 10, border: '1px solid #dbe4ea', fontSize: 13 }}
+                    />
+                    <Line
+                      dataKey="rateUsvH"
+                      stroke={DOSE_COLOR}
+                      strokeWidth={2}
+                      dot={false}
+                      activeDot={{ r: 5 }}
+                      isAnimationActive={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+
+              <h3 className="rad-subtitle">Records</h3>
+              <div className="rad-table-wrap">
+                <table className="env-table rad-table">
+                  <thead>
+                    <tr>
+                      <th>Time (UTC)</th>
+                      <th>Record</th>
+                      <th>Radiation type</th>
+                      <th>Location</th>
+                      <th>Instrument</th>
+                      <th>Dose</th>
+                      <th>Rate</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rad.records.map((r) => (
+                      <tr key={r.id}>
+                        <td>{stamp(r.time)}</td>
+                        <td>{eventLabel(r.type)}</td>
+                        <td>{r.radiationType}</td>
+                        <td>{locationLabel(r.location)}</td>
+                        <td>{r.instrument}</td>
+                        <td>
+                          <b>{mSv(r.doseMsv, 3)}</b> {DOSE_UNIT}
+                        </td>
+                        <td>
+                          {r.rateUsvH == null ? '—' : number(r.rateUsvH)} {RATE_UNIT}
+                        </td>
+                        <td>
+                          <span className="data-status">{sourceLabel(r.source)}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
           <p className="chart-footnote">
-            The CSA notes that neutrons account for roughly 30% of the radiation on the ISS, which
-            is why it develops dedicated neutron instruments such as CANS. SOMA does not claim
-            integration with CANS or any CSA instrument.
+            Doses are dose equivalent (sievert), which weights each radiation type. The CSA notes
+            that neutrons account for roughly 30% of the radiation on the ISS, which is why it
+            develops dedicated neutron instruments such as CANS. SOMA does not claim integration
+            with CANS or any CSA instrument.
           </p>
         </section>
 
-        <aside className="panel env-personal">
+        <aside className="panel env-personal rad-mission">
           <div className="panel-title">
             <div>
-              <h2>Personal dose</h2>
-              <p>Cabin share + EVA badge · 7 days</p>
+              <h2>Mission dose</h2>
+              <p>Cabin area dose since mission start</p>
             </div>
           </div>
-          <label>
-            Crew member
-            <select value={person} onChange={(e) => setPerson(e.target.value)}>
-              {crew.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                  {canView(c.id) ? '' : ' · locked'}
-                </option>
-              ))}
-            </select>
-          </label>
-          {!canView(person) ? (
-            <LockedPanel
-              compact
-              person={crew.find((c) => c.id === person)}
-              what="personal dose"
-              onUnlock={() => onUnlock(person)}
-            />
+          {!ready ? (
+            <RadiationState status={radiationStatus} apiConfigured={apiConfigured} />
           ) : (
             <>
               <div className="dose-hero">
-                <span>{number(dose.total / 1000)}</span>
-                <small>mGy absorbed · 7 days</small>
+                <span>{mSv(rad.missionMsv, 1)}</span>
+                <small>
+                  {DOSE_UNIT} cumulative · {rad.missionDays} days
+                </small>
               </div>
               <div className="dose-split">
                 <div>
-                  <b>{number(dose.cabin / 1000)} mGy</b>
-                  <small>Inside the vehicle</small>
+                  <b>
+                    {rad.currentRate ? number(rad.currentRate.rateUsvH) : '—'} {RATE_UNIT}
+                  </b>
+                  <small>
+                    Current rate
+                    {rad.currentRate ? ` · ${timeLabel(rad.currentRate.time)} UTC` : ''}
+                  </small>
                 </div>
                 <div>
-                  <b>{number(dose.eva / 1000)} mGy</b>
-                  <small>During EVA</small>
+                  <b>
+                    {mSv(rad.last7Msv)} {DOSE_UNIT}
+                  </b>
+                  <small>Last 7 days</small>
                 </div>
               </div>
-              {evas.length ? (
-                evas.map((e) => (
-                  <div className="eva-note" key={e.daysAgo}>
-                    <Footprints size={16} />
-                    <span>
-                      <b>
-                        EVA · {dateLabel(now - e.daysAgo * 86400000)} · {e.hours} h
-                      </b>
-                      {e.note}
-                    </span>
-                  </div>
-                ))
+
+              <h3 className="rad-subtitle">Event timeline</h3>
+              {rad.timeline.length ? (
+                <ol className="rad-timeline">
+                  {rad.timeline.map((e) => {
+                    const Icon = TIMELINE_ICON[e.type] || Radiation;
+                    return (
+                      <li key={e.id} className={'t-' + e.type}>
+                        <span className="rad-dot" aria-hidden="true">
+                          <Icon size={14} />
+                        </span>
+                        <div>
+                          <b>{eventLabel(e.type)}</b>
+                          <time>{stamp(e.time)}</time>
+                          <small>
+                            {locationLabel(e.location)} · {e.radiationType}
+                            <br />
+                            {mSv(e.doseMsv, 3)} {DOSE_UNIT}
+                            {e.rateUsvH != null &&
+                              ` · ${e.type === 'solar_particle_event' ? 'peak ' : ''}${number(e.rateUsvH)} ${RATE_UNIT}`}
+                            {' · '}
+                            {e.instrument}
+                          </small>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
               ) : (
-                <p className="muted">No EVA recorded in this period.</p>
+                <p className="muted">No radiation events recorded.</p>
               )}
             </>
           )}

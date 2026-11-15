@@ -1,5 +1,11 @@
 import bcrypt from 'bcryptjs';
 import { prisma } from '../src/db/client.js';
+import { refreshSimulatedRadiation } from './radiation-data.js';
+
+// ADDITIVE by default: the seed only creates what is missing and never modifies or deletes existing
+// rows (real check-ins, changed PINs, mission start, sources…). `--reset` restores the demo state by
+// overwriting the seeded rows, as the e2e seed needs a known database.
+const RESET = process.argv.includes('--reset');
 
 const sources = [
   ['nasa-hazards', 'NASA', 'NASA Human Spaceflight Hazards', 'https://www.nasa.gov/hrp/hazards/', 'web'],
@@ -14,6 +20,8 @@ const sources = [
   ['nasa-risk-fitness', 'NASA', 'Risk: reduced cardiorespiratory and musculoskeletal fitness', 'https://www.nasa.gov/reference/risk-of-reduced-cardiorespiratory-and-musculoskeletal-fitness/', 'web'],
   ['nasa-risk-bone', 'NASA', 'Risk: spaceflight-induced bone changes', 'https://www.nasa.gov/reference/risk-of-spaceflight-induced-bone-changes/', 'web'],
   ['nasa-hrp-research', 'NASA', 'Ongoing HRP Research in Space', 'https://www.nasa.gov/hrp/ongoing-hrp-research/', 'web'],
+  ['nasa-hazard-radiation', 'NASA', 'Hazard: space radiation', 'https://www.nasa.gov/hrp/hazard-space-radiation/', 'web'],
+  ['csa-radiation', 'CSA', 'Monitoring radiation for astronaut health', 'https://www.asc-csa.gc.ca/eng/sciences/radiation.asp', 'web'],
 ];
 
 const crew = [
@@ -116,6 +124,17 @@ const measurementFields = [
   ['exercise_min', 'exerciseMin', 'min'],
 ] as const;
 
+/** Simulated radiation record (F13): created once; replaced only with --reset (or `npm run seed:radiation`). */
+async function seedRadiation(missionStart: Date, today: Date) {
+  const existing = await prisma.radiationEvent.count({ where: { source: 'simulated' } });
+  if (existing && !RESET) {
+    console.log(`Radiation: ${existing} simulated records already present, left unchanged.`);
+    return;
+  }
+  const created = await refreshSimulatedRadiation(missionStart, today);
+  console.log(`Radiation: ${created} simulated records created.`);
+}
+
 async function main() {
   const accessedOn = new Date();
   accessedOn.setHours(0, 0, 0, 0);
@@ -123,7 +142,7 @@ async function main() {
   for (const [id, agency, title, url, docType] of sources) {
     await prisma.source.upsert({
       where: { id },
-      update: { agency, title, url, docType, accessedOn },
+      update: RESET ? { agency, title, url, docType, accessedOn } : {},
       create: { id, agency, title, url, docType, accessedOn },
     });
   }
@@ -138,19 +157,21 @@ async function main() {
     ['E-01', 'nasa-risk-fitness'],
     ['X-01', 'nasa-hazards'],
   ]) {
-    await prisma.rule.updateMany({ where: { id: ruleId }, data: { sourceId } });
+    // Only fills a missing link unless resetting.
+    await prisma.rule.updateMany({ where: RESET ? { id: ruleId } : { id: ruleId, sourceId: null }, data: { sourceId } });
   }
-  await prisma.source.deleteMany({ where: { id: { notIn: sources.map(([id]) => id) } } });
+  if (RESET) await prisma.source.deleteMany({ where: { id: { notIn: sources.map(([id]) => id) } } });
 
-  const missionStart = new Date(Date.now() - 89 * 86400000);
+  const defaultMissionStart = new Date(Date.now() - 89 * 86400000);
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
 
   for (const person of crew) {
     const pinHash = await bcrypt.hash(person.pin, 10);
+    const missionStart = defaultMissionStart;
     const astronaut = await prisma.astronaut.upsert({
       where: { id: person.id },
-      update: { name: person.name, role: person.role, avatar: person.avatar, pinHash, missionStart },
+      update: RESET ? { name: person.name, role: person.role, avatar: person.avatar, pinHash, missionStart } : {},
       create: { id: person.id, name: person.name, role: person.role, avatar: person.avatar, pinHash, missionStart },
     });
 
@@ -185,18 +206,21 @@ async function main() {
         exerciseMin: sample.exerciseMin + crewOffset * 5,
       };
 
+      // A day that already has a check-in (real or seeded) is left as it is.
       await prisma.checkin.upsert({
         where: { astronautId_day: { astronautId: astronaut.id, day } },
-        update: { ...reading, source: 'simulated' },
+        update: RESET ? { ...reading, source: 'simulated' } : {},
         create: { astronautId: astronaut.id, day, ...reading, source: 'simulated' },
       });
 
       for (const [indicator, field, unit] of measurementFields) {
+        // Additive: skip the day if it already has this indicator from any source (a real reading
+        // must not get a seeded twin). --reset only rewrites the seeded (simulated) row.
         const existing = await prisma.measurement.findFirst({
           where: {
             astronautId: astronaut.id,
             indicator,
-            source: 'simulated',
+            ...(RESET ? { source: 'simulated' as const } : {}),
             ts: { gte: day, lt: nextDay },
           },
           orderBy: { ts: 'asc' },
@@ -210,7 +234,7 @@ async function main() {
         };
 
         if (existing) {
-          await prisma.measurement.update({ where: { id: existing.id }, data });
+          if (RESET) await prisma.measurement.update({ where: { id: existing.id }, data });
         } else {
           await prisma.measurement.create({
             data: { astronautId: astronaut.id, indicator, ...data },
@@ -219,6 +243,11 @@ async function main() {
       }
     }
   }
+
+  // The radiation record follows the mission that is already in the database.
+  const firstAstronaut = await prisma.astronaut.findFirst({ where: { missionStart: { not: null } }, orderBy: { missionStart: 'asc' }, select: { missionStart: true } });
+  await seedRadiation(firstAstronaut?.missionStart ?? defaultMissionStart, today);
+  console.log(RESET ? 'Seed finished (reset mode: demo rows overwritten).' : 'Seed finished (additive: existing rows left unchanged).');
 }
 
 main()

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { crew, createEmptyState, environments } from '../features/crew/models/crewModel.js';
 import { environmentSignals } from '../features/environment/models/envData.js';
+import { radiationSignals, summarizeRadiation } from '../features/environment/models/radiation.js';
+import { useRadiationEvents } from '../features/environment/hooks/useRadiationEvents.js';
 import { notificationModel } from '../features/alerts/models/notificationModel.js';
 import { applyA11y, readA11y } from '../features/support/models/accessibility.js';
 import { apiConfigured } from '../shared/api/apiClient.js';
@@ -194,7 +196,15 @@ export function useAppController() {
     for (const id of access.ids) remote[id] = privateApiSignals[id] || [];
     return remote;
   }, [backendOverview, backendCrew, privateApiSignals, access.ids]);
-  const notif = notificationModel(data, now, signals, environmentSignals(now));
+  // Radiation context (F13) comes from the backend record; cabin air is still synthetic.
+  const radiationQuery = useRadiationEvents(apiConfigured);
+  const radiationEvents = radiationQuery.data;
+  const radiation = useMemo(() => summarizeRadiation(radiationEvents || []), [radiationEvents]);
+  const envSignals = useMemo(
+    () => [...environmentSignals(now), ...radiationSignals(radiationEvents || [], now)],
+    [radiationEvents, now],
+  );
+  const notif = notificationModel(data, now, signals, envSignals);
   const snoozeReminder = (id) => {
     setData((d) => ({
       ...d,
@@ -355,6 +365,9 @@ export function useAppController() {
 
   return {
     access,
+    radiation,
+    radiationStatus: radiationQuery.isPending ? 'loading' : radiationQuery.isError ? 'error' : 'ready',
+    envSignals,
     acknowledge,
     activeEmergency,
     a11y,

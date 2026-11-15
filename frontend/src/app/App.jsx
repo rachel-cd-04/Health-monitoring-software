@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAppController } from './useAppController.js';
-import { Activity, Radio, X, CheckCircle2 } from 'lucide-react';
+import { Activity, Radio, Radiation as RadiationIcon, X, CheckCircle2 } from 'lucide-react';
 import { timeLabel, missionDayNumber, environments } from '../features/crew/models/crewModel.js';
 import {
   PinPad,
@@ -43,6 +43,9 @@ import '../emergency.css';
 export default function App() {
   const {
     access,
+    radiation,
+    radiationStatus,
+    envSignals,
     acknowledge,
     activeEmergency,
     a11y,
@@ -162,6 +165,18 @@ export default function App() {
                   : environments[data.environment]?.link || connectionNames.online
                 : connectionNames[data.connection]}
           </span>
+          {!radiation.empty && (
+            <button
+              className="link-chip rad-chip"
+              onClick={() => navigate('environment')}
+              title="Simulated radiation record · open Environment"
+              aria-label={`Radiation: ${radiation.currentRate ? radiation.currentRate.rateUsvH + ' microsieverts per hour now, ' : ''}${radiation.missionMsv.toFixed(1)} millisieverts this mission (simulated). Open Environment.`}
+            >
+              <RadiationIcon size={14} />
+              {radiation.currentRate ? `${radiation.currentRate.rateUsvH} µSv/h · ` : ''}
+              {radiation.missionMsv.toFixed(1)} mSv
+            </button>
+          )}
         </div>
         <div className="top-right">
           <span className="demo-chip">
@@ -269,7 +284,14 @@ export default function App() {
           />
         )}
         {view === 'environment' && (
-          <Environment onRisk={setRiskSheet} now={now} canView={can} onUnlock={requestAccess} />
+          <Environment
+            onRisk={setRiskSheet}
+            now={now}
+            radiation={radiation}
+            radiationStatus={radiationStatus}
+            apiConfigured={apiConfigured}
+            signals={envSignals}
+          />
         )}
         {view === 'medical' && (
           <Medical
