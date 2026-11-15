@@ -106,6 +106,7 @@ export default function App() {
     updateAssessment,
     view,
     appendChat,
+    clearChat,
     notif,
     snoozeReminder,
   } = useAppController();
@@ -379,6 +380,7 @@ export default function App() {
         personId={detail || (access.ids.length === 1 ? access.ids[0] : null)}
         canView={can}
         onAppend={appendChat}
+        onClear={clearChat}
         onStation={() => {
           const id = detail || access.ids[0];
           id && openStation({ crewId: id, slot: 'daily' });

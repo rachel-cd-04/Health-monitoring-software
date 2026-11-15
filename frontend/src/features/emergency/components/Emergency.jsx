@@ -5,12 +5,11 @@ import {
   Minimize2,
   Radio,
   Shield,
-  Users,
   HeartPulse,
   Clock,
   ChevronRight,
   RotateCcw,
-  MessageSquare,
+  MessageSquareText,
   UserRound,
 } from 'lucide-react';
 import {
@@ -23,7 +22,7 @@ import {
 } from '../../crew/models/crewModel.js';
 import { uuid } from '../../../shared/ids.js';
 import { scenarios, node, FIRST_STEP, summaryText } from '../models/emergencyFlow.js';
-import CrewAssistant from '../../assistant/components/CrewAssistant.jsx';
+import EmergencyChat from './EmergencyChat.jsx';
 import { apiConfigured } from '../../../shared/api/apiClient.js';
 import { useEmergencyContext } from '../hooks/useEmergencyContext.js';
 
@@ -185,12 +184,10 @@ function Vitals({ onSave, onSkip }) {
 export default function Emergency({
   data,
   signals = {},
-  operator,
   initialPatient,
   incidentId,
   onClose,
   onBroadcast,
-  onAcknowledge,
   onPatch,
   onAppend,
   onResolve,
@@ -201,7 +198,9 @@ export default function Emergency({
     [id, setId] = useState(incidentId || null),
     [opened] = useState(Date.now()),
     [now, setNow] = useState(Date.now()),
-    [showThread, setShowThread] = useState(false);
+    [chatOpen, setChatOpen] = useState(
+      () => typeof window !== 'undefined' && window.matchMedia?.('(min-width: 1180px)').matches,
+    );
   const pendingEventId = useRef(uuid());
   const ref = useRef();
   const onCloseRef = useRef(onClose);
@@ -220,7 +219,13 @@ export default function Emergency({
   useEffect(() => {
     ref.current?.focus();
     const key = (e) => {
-      if (e.key === 'Escape') onCloseRef.current();
+      if (e.key !== 'Escape') return;
+      // Escape inside the chat closes the chat, not the whole emergency guide.
+      if (e.target?.closest?.('.em-chat')) {
+        setChatOpen(false);
+        return;
+      }
+      onCloseRef.current();
     };
     document.addEventListener('keydown', key);
     const o = document.body.style.overflow;
@@ -318,7 +323,69 @@ export default function Emergency({
       : person
         ? (signals[person.id] || []).filter((s) => s.level !== 'info')
         : [];
-  const others = crew.filter((c) => c.id !== incident?.patient);
+  const savedVitals = (
+    <section className="em-saved" aria-label="Last saved vitals">
+      <h2>
+        <HeartPulse size={18} />
+        {person ? `${name}’s last saved vitals` : 'Last saved vitals'}
+      </h2>
+      {!person ? (
+        <p>Person not identified, so no saved vitals to show.</p>
+      ) : emergencyContext.isPending && isApiIncident ? (
+        <p>Loading the last saved vitals…</p>
+      ) : emergencyContext.error && isApiIncident ? (
+        <p>Could not load emergency context: {emergencyContext.error.message}</p>
+      ) : lastVitals.length ? (
+        <ul className="em-kv">
+          {lastVitals.map(({ k, r }) => (
+            <li key={k}>
+              <span>{metrics[k].short}</span>
+              <b>
+                {valueLabel(r)} <small>{metrics[k].unit}</small>
+              </b>
+              <time>{stamp(r.time)}</time>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>No saved vitals.</p>
+      )}
+      {alerts.length > 0 && (
+        <div className="em-alerts">
+          {alerts.map((a) => (
+            <span key={a.id} className={a.level === 'review' ? 'red' : ''}>
+              {a.short}
+            </span>
+          ))}
+        </div>
+      )}
+      <small className="em-note">Shown without a code for safety. Saved values may be old.</small>
+    </section>
+  );
+  const hasSide = incident?.vitals?.length > 0;
+  const chatKey = incident ? 'emergency-' + incident.id : null;
+  // What the chat may tell the assistant: the guide's current step, never the person's name.
+  const chatStep = (() => {
+    const s = incident && node(step, { name: 'the person', scenario: incident.scenario });
+    if (!s) return undefined;
+    if (s.kind === 'question')
+      return {
+        kind: s.kind,
+        title: s.text,
+        items: [...(s.hint ? [s.hint] : []), 'Options: ' + s.options.map((o) => o.label).join(' / ')],
+      };
+    if (s.kind === 'action') return { kind: s.kind, title: s.title, items: s.items };
+    if (s.kind === 'vitals') return { kind: s.kind, title: s.text, items: [s.hint] };
+    return { kind: 'summary', title: 'Summary, handover to the CMO and report to Earth' };
+  })();
+  const chatContext = incident && {
+    situation: incident.situation,
+    scenario: scenarios.find((sc) => sc.id === incident.scenario)?.label,
+    step: chatStep,
+    assessment: incident.assessment,
+    vitals: incident.vitals,
+    minutesElapsed: (now - incident.createdAt) / 60000,
+  };
 
   return (
     <div
@@ -344,6 +411,17 @@ export default function Emergency({
             {person.name}
           </span>
         )}
+        {incident && (
+          <button
+            className={'em-ask' + (chatOpen ? ' on' : '')}
+            onClick={() => setChatOpen((o) => !o)}
+            aria-expanded={chatOpen}
+            aria-label={chatOpen ? 'Hide Ask SOMA' : 'Ask SOMA about this emergency'}
+          >
+            <MessageSquareText size={18} />
+            <span>Ask SOMA</span>
+          </button>
+        )}
         <button
           className="em-min"
           onClick={onClose}
@@ -353,7 +431,11 @@ export default function Emergency({
           {incident ? 'Minimise' : 'Cancel'}
         </button>
       </header>
-      <div className="em-body">
+      <div
+        className={
+          'em-body' + (hasSide ? '' : ' no-side') + (incident && chatOpen ? ' with-chat' : '')
+        }
+      >
         <main className="em-main" tabIndex={-1} aria-live="polite">
           {step === 'who' && (
             <>
@@ -414,6 +496,7 @@ export default function Emergency({
                   </button>
                 ))}
               </div>
+              {savedVitals}
             </>
           )}
           {n?.kind === 'action' && (
@@ -520,103 +603,11 @@ export default function Emergency({
                   Closed {stamp(incident.closedAt)} · {incident.closeReason || 'resolved'}.
                 </p>
               )}
-              <button className="em-back" onClick={() => setShowThread((s) => !s)}>
-                <MessageSquare size={16} />
-                {showThread ? 'Hide' : 'Open'} incident notes
-              </button>
-              {showThread && (
-                <div className="em-thread">
-                  <CrewAssistant
-                    key={incident.id}
-                    person={person || { id: 'unknown', name: 'Unidentified crew member' }}
-                    data={data}
-                    alert={incident}
-                    onAppend={onAppend}
-                    onAssessment={(aid, assessment) => onPatch(aid, (a) => ({ ...a, assessment }))}
-                  />
-                </div>
-              )}
             </>
           )}
         </main>
-        <aside className="em-side">
-          <section>
-            <h2>
-              <HeartPulse size={18} />
-              {person ? `${name}’s last saved vitals` : 'Last saved vitals'}
-            </h2>
-            {person ? (
-              emergencyContext.isPending && isApiIncident ? (
-                <p>Loading the patient’s last saved vitals…</p>
-              ) : emergencyContext.error && isApiIncident ? (
-                <p>Could not load emergency context: {emergencyContext.error.message}</p>
-              ) : lastVitals.length ? (
-                <ul className="em-kv">
-                  {lastVitals.map(({ k, r }) => (
-                    <li key={k}>
-                      <span>{metrics[k].short}</span>
-                      <b>
-                        {valueLabel(r)} <small>{metrics[k].unit}</small>
-                      </b>
-                      <time>{stamp(r.time)}</time>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No saved vitals.</p>
-              )
-            ) : (
-              <p>Choose the person to see them.</p>
-            )}
-            {alerts.length > 0 && (
-              <div className="em-alerts">
-                {alerts.map((a) => (
-                  <span key={a.id} className={a.level === 'review' ? 'red' : ''}>
-                    {a.short}
-                  </span>
-                ))}
-              </div>
-            )}
-            <small className="em-note">
-              Shown without a code for safety. Saved values may be old.
-            </small>
-          </section>
-          {incident && (
-            <section>
-              <h2>
-                <Users size={18} />
-                Crew alerted
-              </h2>
-              <ul className="em-ack">
-                {others.map((c) => (
-                  <li key={c.id}>
-                    <span className="em-avatar sm" style={{ '--person': c.color }}>
-                      {c.initials}
-                    </span>
-                    {c.name}
-                    <em className={incident.acknowledgedBy.includes(c.id) ? 'ok' : ''}>
-                      {incident.acknowledgedBy.includes(c.id) ? (
-                        <>
-                          <Check size={14} />
-                          On it
-                        </>
-                      ) : (
-                        'Pending'
-                      )}
-                    </em>
-                  </li>
-                ))}
-              </ul>
-              {incident.status === 'active' &&
-                !incident.acknowledgedBy.includes(operator.id) &&
-                operator.id !== incident.patient && (
-                  <button className="em-big ghost small" onClick={() => onAcknowledge(incident.id)}>
-                    Acknowledge as {operator.name.split(' ')[0]}
-                  </button>
-                )}
-            </section>
-          )}
-          {incident?.vitals?.length > 0 && (
+        {hasSide && (
+          <aside className="em-side">
             <section>
               <h2>Taken during the emergency</h2>
               <ul className="em-kv">
@@ -631,8 +622,18 @@ export default function Emergency({
                 ))}
               </ul>
             </section>
-          )}
-        </aside>
+          </aside>
+        )}
+        {incident && chatOpen && (
+          <EmergencyChat
+            key={chatKey}
+            threadKey={chatKey}
+            messages={data.chatThreads[chatKey] || []}
+            onAppend={onAppend}
+            context={chatContext}
+            onClose={() => setChatOpen(false)}
+          />
+        )}
       </div>
       <footer className="em-foot">
         <Shield size={16} />

@@ -95,3 +95,61 @@ export function emergencyPrompts(assessment = {}) {
   if (!assessment.onset) return ['Started just now', 'Started earlier'];
   return ['Summarise the next coordination steps', 'What information should I record?'];
 }
+
+const EMERGENCY_RED_FLAGS =
+  /not breathing|stopped breathing|unresponsive|not responding|no pulse|cpr|gasping|choking|seizure|no respira|no responde/;
+
+/** Questions that fit the step on screen (emergency chat). */
+export function emergencyChatPrompts(step) {
+  switch (step?.kind) {
+    case 'question':
+      return ['How do I check this?', 'What if I’m not sure?', 'What happens next?'];
+    case 'action':
+      return ['Why does this step matter?', 'What should I watch for?', 'What do I tell the CMO?'];
+    case 'vitals':
+      return ['Which vitals matter most here?', 'When should I skip this?'];
+    case 'summary':
+      return ['What should the CMO handover include?', 'What do I report to Earth?'];
+    default:
+      return ['What should I do right now?'];
+  }
+}
+
+/**
+ * Offline answer for the emergency chat: no model, it only restates the guide's current step.
+ * Used when the AI assistant is not configured or cannot be reached, so the chat never blocks the guide.
+ */
+export function offlineEmergencyReply(input, context = {}) {
+  const text = input.toLowerCase();
+  const a = context.assessment || {};
+  const urgent =
+    EMERGENCY_RED_FLAGS.test(text) ||
+    a.responsive === 'no' ||
+    a.breathing === 'no' ||
+    a.breathing === 'unknown';
+  const parts = [];
+  if (urgent)
+    parts.push(
+      'Call the CMO and the whole crew now. Start or continue basic life support as your mission procedure says. Do not wait for this chat.',
+    );
+  const step = context.step;
+  if (step?.kind === 'action')
+    parts.push(
+      `Current step — ${step.title}:\n${(step.items || []).map((item, i) => `${i + 1}. ${item}`).join('\n')}`,
+    );
+  else if (step?.kind === 'question')
+    parts.push(`Current check: ${step.title} Answer it on screen to get the next step.`);
+  else if (step?.kind === 'vitals')
+    parts.push(
+      'Take heart rate, blood pressure, temperature and blood sugar only if it does not delay care. Otherwise skip this step.',
+    );
+  else if (step?.kind === 'summary')
+    parts.push(
+      'For the handover, give the CMO: when it started, responsiveness, breathing, the vitals taken and what has been done (the log on screen has all of it, with times).',
+    );
+  else parts.push('Follow the step on screen and keep the CMO involved.');
+  parts.push(
+    'The AI assistant is offline, so this answer only repeats the guide. The CMO and your mission procedures lead.',
+  );
+  return { text: parts.join('\n\n') };
+}

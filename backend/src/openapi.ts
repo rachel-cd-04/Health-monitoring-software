@@ -196,6 +196,21 @@ export const openapi: Record<string, unknown> = {
         description: 'MOD-01: no astronaut_id. Private data of the logged-in astronaut is unlocked by the optional bearer token.',
         properties: {
           message: { type: 'string', minLength: 1, maxLength: 2000 },
+          emergency: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['situation'],
+            description: 'MOD-04: optional live context from the emergency guide (what is on screen). Switches the assistant to short, procedure-bound emergency answers.',
+            properties: {
+              situation: { type: 'string', maxLength: 120 },
+              scenario: { type: 'string', maxLength: 80 },
+              step: { type: 'object', additionalProperties: false, required: ['kind', 'title'], properties: { kind: { type: 'string', enum: ['question', 'action', 'vitals', 'summary'] }, title: { type: 'string', maxLength: 200 }, items: { type: 'array', maxItems: 8, items: { type: 'string', maxLength: 300 } } } },
+              assessment: { type: 'object', additionalProperties: false, properties: { responsive: { type: 'string' }, breathing: { type: 'string' }, onset: { type: 'string' } } },
+              vitals: { type: 'array', maxItems: 12, items: { type: 'object', additionalProperties: false, required: ['label', 'value', 'unit'], properties: { label: { type: 'string' }, value: { type: 'number' }, unit: { type: 'string' } } } },
+              minutes_elapsed: { type: 'integer', minimum: 0 },
+              history: { type: 'array', maxItems: 6, items: { type: 'object', additionalProperties: false, required: ['role', 'text'], properties: { role: { type: 'string', enum: ['user', 'assistant'] }, text: { type: 'string', maxLength: 1500 } } } },
+            },
+          },
         },
       },
     },

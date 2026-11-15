@@ -3423,6 +3423,112 @@ html.theme-dark .rail-alert {
   overflow: auto;
   max-height: none;
 }
+/* Movable dock: drag the button or the window header; the grip also moves it with arrow keys. */
+.dock-fab,
+.dock-panel > header {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.dock-panel > header {
+  cursor: grab;
+  padding-left: 8px;
+}
+.dock-panel[hidden] {
+  display: none;
+}
+.dock-fab.dragging,
+.dock-panel.dragging > header {
+  cursor: grabbing;
+}
+.dock-fab.dragging {
+  transform: scale(1.06);
+  transition: none;
+  box-shadow:
+    0 26px 50px -14px rgba(11, 122, 132, 0.85),
+    0 0 0 1px rgba(15, 39, 51, 0.08);
+}
+.dock-panel.dragging {
+  transition: none;
+}
+.dock-grip {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 36px;
+  margin-right: -6px;
+  border-radius: 8px;
+  color: var(--ink-3);
+  cursor: grab;
+}
+.dock-grip:hover,
+.dock-grip:focus-visible {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.dock-panel > header .icon-only + .icon-only {
+  margin-left: -6px;
+}
+.dock-fab.hint-right .dock-hint {
+  right: auto;
+  left: calc(100% + 10px);
+  transform: translateY(-50%) translateX(-6px);
+}
+.dock-fab.hint-right:hover .dock-hint,
+.dock-fab.hint-right:focus-visible .dock-hint {
+  transform: translateY(-50%);
+}
+/* Minimised: a teal ring with a soft pulse, so a conversation in progress stands out from the page. */
+.dock-fab.minimized {
+  background: var(--teal);
+  box-shadow:
+    0 18px 40px -14px rgba(11, 122, 132, 0.85),
+    0 0 0 3px color-mix(in srgb, var(--teal) 30%, transparent);
+  animation: dock-waiting 2.4s ease-in-out infinite;
+}
+@keyframes dock-waiting {
+  50% {
+    box-shadow:
+      0 18px 40px -14px rgba(11, 122, 132, 0.85),
+      0 0 0 9px color-mix(in srgb, var(--teal) 0%, transparent);
+  }
+}
+.dock-fab.minimized.dragging {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dock-fab.minimized {
+    animation: none;
+  }
+}
+html.a11y-reduce-motion .dock-fab.minimized {
+  animation: none;
+}
+/* Minimised conversation: a dot, or the number of replies that arrived meanwhile. */
+.dock-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--teal);
+  box-shadow: 0 0 0 3px var(--surface);
+  pointer-events: none;
+}
+.dock-badge.new {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  display: grid;
+  place-items: center;
+  background: var(--red);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1;
+}
 /* Keep page content clear of the floating button */
 .app-shell .main-footer {
   padding-right: 96px;

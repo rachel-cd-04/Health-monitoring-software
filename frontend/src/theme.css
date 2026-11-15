@@ -1112,3 +1112,74 @@ body {
     transform: none;
   }
 }
+
+/* ---------- Markdown in assistant replies (shared/components/Markdown.jsx) ---------- */
+.md {
+  overflow-wrap: anywhere;
+}
+.md > * + * {
+  margin-top: 0.55em;
+}
+.chat-message .md p,
+.md p {
+  white-space: normal;
+}
+.md strong {
+  font-weight: 700;
+  color: var(--ink);
+}
+.md em {
+  font-style: italic;
+}
+.md .md-heading {
+  font-weight: 700;
+  color: var(--ink);
+}
+.md ul,
+.md ol {
+  margin: 0;
+  padding-left: 1.3em;
+  display: grid;
+  gap: 0.25em;
+}
+.md ul {
+  list-style: disc;
+}
+.md ol {
+  list-style: decimal;
+}
+.md li::marker {
+  color: var(--ink-3);
+}
+.md code {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.9em;
+  padding: 0.1em 0.35em;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+.md pre {
+  padding: 10px 12px;
+  border-radius: 10px;
+  overflow-x: auto;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+.md pre code {
+  padding: 0;
+  background: none;
+}
+.md blockquote {
+  margin: 0;
+  padding-left: 10px;
+  border-left: 3px solid var(--line);
+  color: var(--ink-2);
+}
+.md hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+.md a {
+  color: var(--teal-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

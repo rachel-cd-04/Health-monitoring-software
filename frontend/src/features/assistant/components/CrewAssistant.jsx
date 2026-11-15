@@ -14,8 +14,9 @@ import { assistantMode, resolveSource } from '../services/assistantAdapter.js';
 import { useAssistant } from '../hooks/useAssistant.js';
 import { officialResources } from '../../health/models/risks.js';
 import { timeLabel, localId } from '../../crew/models/crewModel.js';
+import Markdown from '../../../shared/components/Markdown.jsx';
 
-function Sources({ items, onRisk }) {
+export function Sources({ items, onRisk }) {
   const list = (items || []).map((s) => resolveSource(s, officialResources)).filter(Boolean);
   if (!list.length) return null;
   return (
@@ -193,7 +194,7 @@ export default function CrewAssistant({
                 <em className="fallback-tag">Mission assistant unavailable</em>
               )}
             </span>
-            <p>{m.text}</p>
+            {m.role === 'assistant' ? <Markdown text={m.text} /> : <p>{m.text}</p>}
             {m.dataUsed?.length > 0 && (
               <details className="chat-data">
                 <summary>
