@@ -7,14 +7,12 @@ on:
       - "frontend/**"
       - "docs/testing.md"
       - ".github/workflows/frontend-deploy.yml"
-      - "vercel.json"
   push:
     branches: [main]
     paths:
       - "frontend/**"
       - "docs/testing.md"
       - ".github/workflows/frontend-deploy.yml"
-      - "vercel.json"
 
 permissions:
   contents: read
@@ -29,8 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Node.js 22
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22.x
           cache: npm
@@ -44,7 +41,7 @@ jobs:
 
       - name: Check formatting
         run: npm run format:check
-        
+
       - name: Build frontend
         run: npm run build
 
@@ -52,40 +49,30 @@ jobs:
     runs-on: ubuntu-latest
     needs: frontend-checks
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    defaults:
-      run:
-        working-directory: frontend
+    concurrency:
+      group: frontend-production
+      cancel-in-progress: false
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_FRONTEND_PROJECT_ID }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Node.js 22
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22.x
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
 
-      - name: Verify frontend Vercel secrets are configured
+      - name: Deploy isolated frontend to production
         run: |
-          test -n "$VERCEL_TOKEN" || { echo "Missing VERCEL_TOKEN"; exit 1; }
-          test -n "$VERCEL_ORG_ID" || { echo "Missing VERCEL_ORG_ID"; exit 1; }
-          test -n "$VERCEL_PROJECT_ID" || { echo "Missing VERCEL_FRONTEND_PROJECT_ID"; exit 1; }
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_FRONTEND_PROJECT_ID }}
+          : "${VERCEL_TOKEN:?Missing VERCEL_TOKEN}"
+          : "${VERCEL_ORG_ID:?Missing VERCEL_ORG_ID}"
+          : "${VERCEL_PROJECT_ID:?Missing VERCEL_FRONTEND_PROJECT_ID}"
 
-      - name: Pull frontend Vercel project settings
-        run: npx vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_FRONTEND_PROJECT_ID }}
+          deploy_dir="$(mktemp -d "$RUNNER_TEMP/soma-frontend.XXXXXX")"
+          git archive HEAD:frontend | tar -xf - -C "$deploy_dir"
+          test -f "$deploy_dir/vercel.json"
 
-      - name: Deploy frontend artifacts
-        run: npx vercel deploy --prod --local-config=vercel.json --token="$VERCEL_TOKEN"
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_FRONTEND_PROJECT_ID }}
+          cd "$deploy_dir"
+          npx --yes vercel@65.16.0 deploy --prod --yes --token="$VERCEL_TOKEN"
