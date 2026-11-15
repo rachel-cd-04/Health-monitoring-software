@@ -19,7 +19,6 @@ import {
   NotificationButton,
   NotificationCenter,
 } from '../features/alerts/components/Notifications.jsx';
-import { apiConfigured } from '../shared/api/apiClient.js';
 import CheckInStation from '../features/checkins/components/CheckInStation.jsx';
 import Modal from '../shared/components/Modal.jsx';
 import AppNavigation from './AppNavigation.jsx';
@@ -59,7 +58,6 @@ export default function App() {
     detail,
     emergency,
     emergencyReport,
-    health,
     historyMetric,
     historyPerson,
     lockAll,
@@ -86,6 +84,7 @@ export default function App() {
     restoreReminder,
     riskSheet,
     saveCheckIn,
+    saveMeasurement,
     sendReport,
     setA11y,
     setData,
@@ -179,15 +178,6 @@ export default function App() {
           )}
         </div>
         <div className="top-right">
-          <span className="demo-chip">
-            {apiStatus === 'connected' && health.data?.status === 'ok'
-              ? 'Live API'
-              : apiStatus === 'checking' || (apiConfigured && health.isPending)
-                ? 'Connecting…'
-                : apiStatus === 'missing'
-                  ? 'API URL missing'
-                  : 'API offline'}
-          </span>
           <time>
             {timeLabel(now)} <small>UTC</small>
           </time>
@@ -323,6 +313,7 @@ export default function App() {
           Modal={Modal}
           onClose={() => setStation(null)}
           onSave={saveCheckIn}
+          onSaveMeasurement={saveMeasurement}
         />
       )}
       {emergency && (
@@ -394,7 +385,8 @@ export default function App() {
           onClose={cancelCheckInPicker}
           onChoose={chooseCheckInProfile}
         />
-      )}      {riskSheet && (
+      )}{' '}
+      {riskSheet && (
         <RiskSheet riskId={riskSheet} Modal={Modal} onClose={() => setRiskSheet(null)} />
       )}
       {settings && (

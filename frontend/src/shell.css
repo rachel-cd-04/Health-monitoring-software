@@ -2939,6 +2939,9 @@ html.theme-dark body {
 html.theme-dark .app-shell {
   background: radial-gradient(1200px 700px at 70% -10%, #13222a 0, transparent 60%), var(--canvas);
 }
+html.theme-dark .top {
+  background: radial-gradient(1200px 700px at 70% -10%, #13222a 0, transparent 60%), var(--canvas);
+}
 html.theme-dark .crew-card-body {
   background: radial-gradient(70% 60% at 50% 48%, #26363f 0, #1a2830 55%, #142027 100%);
 }

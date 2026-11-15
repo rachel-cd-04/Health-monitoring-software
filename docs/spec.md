@@ -82,9 +82,11 @@ Screen-level detail: see `features.md`.
 ## 5. User stories and acceptance criteria
 
 **HM-01 · Logging (F1)**
-- [ ] Daily check-in (sleep, mood, fatigue) in < 30 s.
-- [ ] Each of the 8 indicators can be logged with value, unit, timestamp and `source`.
-- [ ] Out-of-range values are rejected with a clear message.
+- [ ] The user can log one individual measurement without completing the daily check-in. Blood pressure is one measurement composed of systolic and diastolic values.
+- [ ] The user can also complete a daily check-in for sleep, mood and fatigue in < 30 s.
+- [ ] Each of the 8 indicators can be logged individually with value, unit, timestamp and `source`.
+- [ ] Out-of-range input values are rejected with a clear message; valid individual measurements and check-in values are saved and shown to the user.
+- [ ] After an individual measurement, show any backend alert, a personal comparison when enough history exists, or the indicator guide's illustrative range and relevant guidance when it does not; never present this as a diagnosis.
 
 **HM-02 · Body map (F2)**
 - [ ] Human figure with 4 clickable zones colored by status (green/amber/red/grey).

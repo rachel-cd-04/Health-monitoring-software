@@ -4,7 +4,7 @@ Requirement → tasks → manual check.
 
 | Req | Feature | Tasks | Manual check (`verification.md`) |
 |---|---|---|---|
-| HM-01 | Logging | T11, T14 | Check-in < 30 s; out-of-range rejected |
+| HM-01 | Logging | T11, T14 | Save one indicator independently; blood pressure uses systolic + diastolic; check-in < 30 s; out-of-range rejected |
 | HM-02 | Body map | T13, T15 | Zones change color |
 | HM-03 | Guides | T07, T16 | Every indicator has a guide |
 | HM-04 | Alerts | T06, T12, T16 | Alert shows rule, version, value, source |

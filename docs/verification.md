@@ -3,8 +3,9 @@
 Each item maps to a requirement in `spec.md` and is checked manually.
 
 ## Functional
-- [ ] Check-in completed in < 30 s (HM-01)
-- [ ] All 8 indicators can be logged; out-of-range value → clear error, not saved (HM-01)
+- [ ] Log one indicator without completing the daily check-in; blood pressure accepts systolic and diastolic values as one measurement (HM-01)
+- [ ] Complete the sleep, mood and fatigue check-in in < 30 s (HM-01)
+- [ ] All 8 indicators can be logged individually; out-of-range value → clear error, not saved (HM-01)
 - [ ] Body map zones change color according to rules (HM-02)
 - [ ] Every indicator has a guide (how / why / range / if abnormal) (HM-03)
 - [ ] Every alert shows actions, who should act, rule, version, triggering value and clickable source (HM-04)

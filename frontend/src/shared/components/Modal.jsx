@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 
-export default function Modal({ title, onClose, children, wide = false }) {
+export default function Modal({ title, onClose, children, wide = false, className = '' }) {
   const container = useRef(null);
   const close = useRef(onClose);
   close.current = onClose;
@@ -54,7 +54,7 @@ export default function Modal({ title, onClose, children, wide = false }) {
   return (
     <div className="modal-backdrop">
       <section
-        className={'modal ' + (wide ? 'wide' : '')}
+        className={'modal ' + (wide ? 'wide ' : '') + className}
         role="dialog"
         aria-modal="true"
         aria-label={title}
