@@ -146,7 +146,7 @@ export default function History({
               setPage(0);
             }}
           >
-            {[1, 3, 7, 30].map((d) => (
+            {[1, 3, 7, 30, 90, 180].map((d) => (
               <option key={d} value={d}>
                 {d} {d === 1 ? 'day' : 'days'}
               </option>

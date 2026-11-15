@@ -54,7 +54,7 @@ The integration spec writes health and emergency records. Do not point it at a p
 
    Or run that spec headlessly with `npm run cypress:run:supabase`.
 
-The seed creates the fictional crew profiles and their local test PINs. Those credentials must only exist in the isolated test project; see `backend/prisma/seed.ts` for the seed data.
+The seed creates the fictional crew profiles, their local test PINs, and seven days of simulated check-ins and measurements for the history charts. Those credentials and records must only exist in the isolated test project; see `backend/prisma/seed.ts` for the seed data.
 
 ## Repeatability and idempotency
 

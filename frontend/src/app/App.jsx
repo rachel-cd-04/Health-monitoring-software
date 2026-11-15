@@ -152,7 +152,7 @@ export default function App() {
           <span className={'link-chip ' + data.connection}>
             <Radio size={14} />
             {data.connection === 'delayed'
-              ? `Earth link Â· ${data.latency} min delay`
+              ? `Earth link · ${data.latency} min delay`
               : data.connection === 'online'
                 ? apiStatus === 'connected' && backendOverview?.comms_delay_s != null
                   ? `Earth link · ${backendOverview.comms_delay_s} s delay`
@@ -165,7 +165,7 @@ export default function App() {
             {apiStatus === 'connected' && health.data?.status === 'ok'
               ? 'Live API'
               : apiStatus === 'checking' || (apiConfigured && health.isPending)
-                ? 'Connectingâ€¦'
+                ? 'Connecting…'
                 : apiStatus === 'missing'
                   ? 'API URL missing'
                   : 'API offline'}
@@ -285,9 +285,9 @@ export default function App() {
         <footer className="main-footer">
           <span>
             <Activity size={13} />
-            SOMA Â· Health during flight
+            SOMA · Health during flight
           </span>
-          <span>Independent NASA Space Apps concept Â· Simulated systems</span>
+          <span>Independent NASA Space Apps concept · Simulated systems</span>
         </footer>
       </main>
       {station && (
