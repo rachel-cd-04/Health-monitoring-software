@@ -80,6 +80,8 @@ jobs:
         run: |
           cd "$BACKEND_DEPLOY_DIR"
           npx --yes vercel@65.16.0 pull --yes --environment=production --token="$VERCEL_TOKEN"
+          npm ci
+          npx prisma generate
           npx --yes vercel@65.16.0 build --prod --token="$VERCEL_TOKEN"
           test -f .vercel/output/config.json
         env:
