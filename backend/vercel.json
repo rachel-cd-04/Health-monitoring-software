@@ -1,4 +1,6 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run prisma:generate",
   "version": 2,
   "functions": {
     "api/index.ts": {
