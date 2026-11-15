@@ -20,6 +20,7 @@ export function useAppController() {
     [view, setView] = useState('crew'),
     [detail, setDetail] = useState(null),
     [station, setStation] = useState(null),
+    [checkInPicker, setCheckInPicker] = useState(null),
     [emergency, setEmergency] = useState(null),
     [settings, setSettings] = useState(false),
     [reminders, setReminders] = useState(false),
@@ -281,7 +282,19 @@ export function useAppController() {
       setDetail(id);
       setView('crew');
     });
-  const openStation = (initial) => requestAccess(initial.crewId, () => setStation(initial));
+  const openStation = (initial) => {
+    if (!access.all && access.ids.length === 0) {
+      setCheckInPicker(initial);
+      return;
+    }
+    requestAccess(initial.crewId, () => setStation(initial));
+  };
+  const cancelCheckInPicker = () => setCheckInPicker(null);
+  const chooseCheckInProfile = (crewId) => {
+    const initial = checkInPicker;
+    setCheckInPicker(null);
+    requestAccess(crewId, () => setStation({ ...initial, crewId }));
+  };
   const checkinMutation = useCreateCheckin();
   const acknowledgeAlertMutation = useAcknowledgeAlert();
   const saveCheckIn = createCheckInController({
@@ -357,6 +370,9 @@ export function useAppController() {
     openHistory,
     openPerson,
     openStation,
+    checkInPicker,
+    cancelCheckInPicker,
+    chooseCheckInProfile,
     operator,
     profileFor,
     patchIncident,

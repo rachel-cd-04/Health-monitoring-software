@@ -67,6 +67,9 @@ export default function App() {
     openHistory,
     openPerson,
     openStation,
+    checkInPicker,
+    cancelCheckInPicker,
+    chooseCheckInProfile,
     operator,
     profileFor,
     patchIncident,
@@ -363,7 +366,14 @@ export default function App() {
           }}
         />
       )}
-      {riskSheet && (
+      {checkInPicker && (
+        <ProfilePicker
+          access={access}
+          Modal={Modal}
+          onClose={cancelCheckInPicker}
+          onChoose={chooseCheckInProfile}
+        />
+      )}      {riskSheet && (
         <RiskSheet riskId={riskSheet} Modal={Modal} onClose={() => setRiskSheet(null)} />
       )}
       {settings && (

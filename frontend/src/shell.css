@@ -168,7 +168,7 @@ body {
   padding: 0 28px 0 4px;
   position: sticky;
   top: 0;
-  background: var(--canvas);
+  background: radial-gradient(1200px 700px at 70% -10%, #f3f6f8 0, transparent 60%), var(--canvas);
   z-index: 25;
 }
 .top-mission {
@@ -2275,6 +2275,19 @@ html[data-text='large'] body {
 }
 html[data-text='xlarge'] body {
   zoom: 1.25;
+}
+html[data-text='large'] .modal-backdrop,
+html[data-text='xlarge'] .modal-backdrop {
+  align-items: flex-start;
+  overflow-y: auto;
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+html[data-text='large'] .modal {
+  max-height: calc(100vh / 1.12 - 32px);
+}
+html[data-text='xlarge'] .modal {
+  max-height: calc(100vh / 1.25 - 32px);
 }
 html.a11y-contrast {
   --ink-2: #1d3846;
