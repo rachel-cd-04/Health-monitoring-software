@@ -3,15 +3,18 @@ name: Backend deployment
 on:
   workflow_dispatch:
   push:
-    branches: ["main"]
+    branches: [main]
     paths:
       - "backend/**"
       - ".github/workflows/backend-deploy.yml"
   pull_request:
-    branches: ["main"]
+    branches: [main]
     paths:
       - "backend/**"
       - ".github/workflows/backend-deploy.yml"
+
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -20,14 +23,13 @@ jobs:
       run:
         working-directory: backend
     env:
-      DIRECT_URL: ${{ secrets.DIRECT_URL || 'postgresql://postgres:postgres@localhost:5432/postgres' }}
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/postgres
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Node.js 22
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22.x
           cache: npm
@@ -46,49 +48,57 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    defaults:
-      run:
-        working-directory: backend
+    concurrency:
+      group: backend-production
+      cancel-in-progress: false
     env:
-      DIRECT_URL: ${{ secrets.DIRECT_URL }}
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Node.js 22
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22.x
           cache: npm
           cache-dependency-path: backend/package-lock.json
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Prepare isolated backend
+        run: |
+          : "${VERCEL_TOKEN:?Missing VERCEL_TOKEN}"
+          : "${VERCEL_ORG_ID:?Missing VERCEL_ORG_ID}"
+          : "${VERCEL_PROJECT_ID:?Missing VERCEL_PROJECT_ID}"
 
-      - name: Generate Prisma Client
-        run: npx prisma generate
+          deploy_dir="$(mktemp -d "$RUNNER_TEMP/soma-backend.XXXXXX")"
+          git archive HEAD:backend | tar -xf - -C "$deploy_dir"
+          test -f "$deploy_dir/vercel.json"
+          printf 'BACKEND_DEPLOY_DIR=%s\n' "$deploy_dir" >> "$GITHUB_ENV"
+
+      - name: Pull Vercel settings and build backend
+        run: |
+          cd "$BACKEND_DEPLOY_DIR"
+          npx --yes vercel@65.16.0 pull --yes --environment=production --token="$VERCEL_TOKEN"
+          npm ci
+          npx prisma generate
+          npx --yes vercel@65.16.0 build --prod --token="$VERCEL_TOKEN"
+          test -f .vercel/output/config.json
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Apply Prisma migrations
-        run: npx prisma migrate deploy
-
-      - name: Pull Vercel project settings
-        run: npx vercel pull --yes --environment=production --local-config=vercel.json --token="$VERCEL_TOKEN"
+        run: |
+          cd "$BACKEND_DEPLOY_DIR"
+          : "${DIRECT_URL:?Missing DIRECT_URL}"
+          : "${DATABASE_URL:?Missing DATABASE_URL}"
+          npx --no-install prisma migrate deploy
         env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      - name: Build Vercel artifacts
-        run: npx vercel build --yes --prod --local-config=vercel.json --token="$VERCEL_TOKEN"
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-      - name: Deploy Vercel artifacts
-        run: npx vercel deploy --prebuilt --prod --local-config=vercel.json --token="$VERCEL_TOKEN"
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      - name: Deploy backend to production
+        run: |
+          cd "$BACKEND_DEPLOY_DIR"
+          npx --yes vercel@65.16.0 deploy --prebuilt --prod --yes --token="$VERCEL_TOKEN"

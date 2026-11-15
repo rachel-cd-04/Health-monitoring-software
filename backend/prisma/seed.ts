@@ -24,17 +24,97 @@ const crew = [
 ];
 
 const routineNames = ['Daily check-in', 'Exercise session', 'Recovery and sleep review'];
-const baselineMeasurements : [string, number, string][] = [
-  ['heart_rate', 65, 'bpm'],
-  ['bp_systolic', 118, 'mmHg'],
-  ['bp_diastolic', 75, 'mmHg'],
-  ['blood_sugar', 92, 'mg/dL'],
-  ['temperature', 36.6, '°C'],
-  ['sleep_hours', 7, 'h'],
-  ['mood', 4, '1–5'],
-  ['fatigue', 2, '1–5'],
-  ['exercise_min', 90, 'min'],
-];
+const dailyReadings = [
+  {
+    heartRate: 64,
+    bpSystolic: 116,
+    bpDiastolic: 74,
+    bloodSugar: 89,
+    temperature: 36.5,
+    sleepHours: 7.5,
+    mood: 4,
+    fatigue: 2,
+    exerciseMin: 45,
+  },
+  {
+    heartRate: 67,
+    bpSystolic: 118,
+    bpDiastolic: 75,
+    bloodSugar: 92,
+    temperature: 36.6,
+    sleepHours: 7,
+    mood: 4,
+    fatigue: 2,
+    exerciseMin: 60,
+  },
+  {
+    heartRate: 66,
+    bpSystolic: 117,
+    bpDiastolic: 76,
+    bloodSugar: 90,
+    temperature: 36.4,
+    sleepHours: 8,
+    mood: 5,
+    fatigue: 1,
+    exerciseMin: 30,
+  },
+  {
+    heartRate: 70,
+    bpSystolic: 120,
+    bpDiastolic: 77,
+    bloodSugar: 96,
+    temperature: 36.7,
+    sleepHours: 6.5,
+    mood: 4,
+    fatigue: 2,
+    exerciseMin: 75,
+  },
+  {
+    heartRate: 68,
+    bpSystolic: 119,
+    bpDiastolic: 75,
+    bloodSugar: 94,
+    temperature: 36.5,
+    sleepHours: 7.25,
+    mood: 3,
+    fatigue: 3,
+    exerciseMin: 50,
+  },
+  {
+    heartRate: 65,
+    bpSystolic: 117,
+    bpDiastolic: 74,
+    bloodSugar: 91,
+    temperature: 36.6,
+    sleepHours: 8,
+    mood: 4,
+    fatigue: 2,
+    exerciseMin: 90,
+  },
+  {
+    heartRate: 72,
+    bpSystolic: 118,
+    bpDiastolic: 76,
+    bloodSugar: 93,
+    temperature: 36.6,
+    sleepHours: 7,
+    mood: 4,
+    fatigue: 2,
+    exerciseMin: 60,
+  },
+] as const;
+
+const measurementFields = [
+  ['heart_rate', 'heartRate', 'bpm'],
+  ['bp_systolic', 'bpSystolic', 'mmHg'],
+  ['bp_diastolic', 'bpDiastolic', 'mmHg'],
+  ['blood_sugar', 'bloodSugar', 'mg/dL'],
+  ['temperature', 'temperature', '°C'],
+  ['sleep_hours', 'sleepHours', 'h'],
+  ['mood', 'mood', '1–5'],
+  ['fatigue', 'fatigue', '1–5'],
+  ['exercise_min', 'exerciseMin', 'min'],
+] as const;
 
 async function main() {
   const accessedOn = new Date();
@@ -63,6 +143,9 @@ async function main() {
   await prisma.source.deleteMany({ where: { id: { notIn: sources.map(([id]) => id) } } });
 
   const missionStart = new Date(Date.now() - 89 * 86400000);
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+
   for (const person of crew) {
     const pinHash = await bcrypt.hash(person.pin, 10);
     const astronaut = await prisma.astronaut.upsert({
@@ -80,25 +163,59 @@ async function main() {
       }
     }
 
-    const checkinDay = new Date();
-    checkinDay.setHours(0, 0, 0, 0);
-    await prisma.checkin.upsert({
-      where: { astronautId_day: { astronautId: astronaut.id, day: checkinDay } },
-      update: { heartRate: 72, bpSystolic: 118, bpDiastolic: 76, bloodSugar: 92, temperature: 36.6, sleepHours: 7, mood: 4, fatigue: 2, exerciseMin: 90, source: 'simulated' },
-      create: { astronautId: astronaut.id, day: checkinDay, heartRate: 72, bpSystolic: 118, bpDiastolic: 76, bloodSugar: 92, temperature: 36.6, sleepHours: 7, mood: 4, fatigue: 2, exerciseMin: 90, source: 'simulated' },
-    });
+    for (const [index, sample] of dailyReadings.entries()) {
+      const daysAgo = dailyReadings.length - index - 1;
+      const day = new Date(today);
+      day.setUTCDate(day.getUTCDate() - daysAgo);
+      const nextDay = new Date(day);
+      nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+      const timestamp = new Date(day);
+      timestamp.setUTCHours(12, 0, 0, 0);
 
-    for (const [indicator, value, unit] of baselineMeasurements) {
-      const existing = await prisma.measurement.findFirst({ where: { astronautId: astronaut.id, indicator, source: 'simulated' } });
-      if (existing) {
-        await prisma.measurement.update({
-          where: { id: existing.id },
-          data: { value, unit, missionPhase: 'in_flight' },
+      const crewOffset = person.id - 1;
+      const reading = {
+        heartRate: sample.heartRate + crewOffset * 2,
+        bpSystolic: sample.bpSystolic + crewOffset,
+        bpDiastolic: sample.bpDiastolic + Math.floor(crewOffset / 2),
+        bloodSugar: sample.bloodSugar + crewOffset * 2,
+        temperature: Number((sample.temperature + crewOffset * 0.05).toFixed(2)),
+        sleepHours: Number(Math.max(6, sample.sleepHours - crewOffset * 0.1).toFixed(2)),
+        mood: Math.max(1, Math.min(5, sample.mood + (crewOffset % 3) - 1)),
+        fatigue: Math.max(1, Math.min(5, sample.fatigue + ((crewOffset + 1) % 3) - 1)),
+        exerciseMin: sample.exerciseMin + crewOffset * 5,
+      };
+
+      await prisma.checkin.upsert({
+        where: { astronautId_day: { astronautId: astronaut.id, day } },
+        update: { ...reading, source: 'simulated' },
+        create: { astronautId: astronaut.id, day, ...reading, source: 'simulated' },
+      });
+
+      for (const [indicator, field, unit] of measurementFields) {
+        const existing = await prisma.measurement.findFirst({
+          where: {
+            astronautId: astronaut.id,
+            indicator,
+            source: 'simulated',
+            ts: { gte: day, lt: nextDay },
+          },
+          orderBy: { ts: 'asc' },
         });
-      } else {
-        await prisma.measurement.create({
-          data: { astronautId: astronaut.id, indicator, value, unit, source: 'simulated', missionPhase: 'in_flight' },
-        });
+        const data = {
+          value: reading[field],
+          unit,
+          ts: timestamp,
+          source: 'simulated' as const,
+          missionPhase: 'in_flight' as const,
+        };
+
+        if (existing) {
+          await prisma.measurement.update({ where: { id: existing.id }, data });
+        } else {
+          await prisma.measurement.create({
+            data: { astronautId: astronaut.id, indicator, ...data },
+          });
+        }
       }
     }
   }

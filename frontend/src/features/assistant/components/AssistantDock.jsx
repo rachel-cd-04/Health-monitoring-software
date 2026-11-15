@@ -259,6 +259,7 @@ export default function AssistantDock({
             <CrewAssistant
               key={threadKey}
               compact
+              paused={!open}
               person={person || GENERAL}
               data={data}
               onAppend={onAppend}
