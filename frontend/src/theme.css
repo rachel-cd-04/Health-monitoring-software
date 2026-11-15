@@ -1358,15 +1358,67 @@ button.rad-chip:hover {
   font-size: 13px;
   color: var(--ink-2);
 }
-.rad-legend span {
+.rad-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 500;
+  transition:
+    opacity 0.15s,
+    background 0.15s,
+    border-color 0.15s;
+}
+.rad-legend-item:hover,
+.rad-legend-item:focus-visible {
+  background: var(--surface-2);
+}
+.rad-legend-item.pinned {
+  border-color: var(--line);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-weight: 600;
+}
+.rad-legend-item.dim {
+  opacity: 0.4;
+}
+.rad-legend-item i {
+  width: 18px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--c);
+}
+.rad-legend-item i.dashed {
+  background: repeating-linear-gradient(90deg, var(--c) 0 5px, transparent 5px 8px);
+}
+/* Table rows carry their location colour: a bar on the left edge and a dot by the name. */
+.rad-table tr.rad-row td:first-child {
+  box-shadow: inset 4px 0 0 var(--c);
+  padding-left: 14px;
+}
+.rad-table tr.rad-row {
+  transition: opacity 0.15s;
+}
+.rad-table tr.rad-row.dim {
+  opacity: 0.35;
+}
+.rad-loc {
   display: inline-flex;
   align-items: center;
   gap: 7px;
 }
-.rad-legend i {
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
+.rad-loc i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--c);
+  flex: none;
 }
 .rad-subtitle {
   display: flex;

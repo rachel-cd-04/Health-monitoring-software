@@ -97,8 +97,8 @@ Body: `{ ended_at?: timestamp }`
 
 ### `GET /radiation/events` (stretch, F13)
 → `[{ ts, dose_msv, dose_rate_usv_h, radiation_type, location, instrument, event_type, source }]`
-- (MOD-06) Public, time-ascending. The seed loads a **simulated** mission record (`source: "simulated"`; re-running the seed replaces only simulated rows). `location` ∈ `cabin | eva | shelter`. `event_type`:
-  - `daily_total`: integrated cabin dose of one UTC day (`dose_msv`, mean `dose_rate_usv_h`); a solar event is included in its day.
+- (MOD-06) Public, time-ascending. The seed loads a **simulated** mission record (`source: "simulated"`; re-running the seed replaces only simulated rows). `location`: `cabin` (vehicle average), a module (`lab | quarters | galley | cupola | shelter`, one area dosimeter each) or `eva`. `event_type`:
+  - `daily_total`: integrated dose of one UTC day per location (`dose_msv`, mean `dose_rate_usv_h`); a solar event is included in its day. The `cabin` total drives the mission total and RAD-01; module totals feed the per-location chart.
   - `rate_sample`: hourly cabin dose rate for the last 24 h (`dose_msv: null`).
   - `solar_particle_event` (extra dose, peak rate), `shelter_period` (dose while sheltered), `eva` (badge dose, mean rate), `neutron_survey` (weekly neutron dose).
 - The frontend derives the cumulative mission dose (sum of `daily_total`), the current rate (last `rate_sample`), the event timeline and the illustrative RAD-01 watch signal (daily cabin dose ≥ 2× the median of the previous 7 days). Dose is context, never a health verdict.

@@ -14,12 +14,30 @@ export const EVENT_LABELS = {
   eva: 'EVA',
   neutron_survey: 'Neutron survey',
 };
-export const LOCATION_LABELS = { cabin: 'Cabin', eva: 'EVA', shelter: 'Storm shelter' };
+/**
+ * Every location the record can use, in legend order, with its colour (validated categorical palette;
+ * `cabin` is the vehicle average, drawn dashed and neutral). Unknown locations fall back to grey.
+ */
+export const LOCATIONS = [
+  { id: 'cabin', label: 'Cabin average', color: '#5f7480', dashed: true },
+  { id: 'lab', label: 'Laboratory module', color: '#2a78d6' },
+  { id: 'quarters', label: 'Crew quarters', color: '#eb6834' },
+  { id: 'galley', label: 'Galley and node', color: '#1baf7a' },
+  { id: 'cupola', label: 'Observation cupola', color: '#eda100' },
+  { id: 'shelter', label: 'Storm shelter', color: '#e87ba4' },
+  { id: 'eva', label: 'EVA', color: '#7c5cd6' },
+];
+const LOCATION_BY_ID = Object.fromEntries(LOCATIONS.map((l) => [l.id, l]));
+const locationOrder = (id) => {
+  const i = LOCATIONS.findIndex((l) => l.id === id);
+  return i === -1 ? LOCATIONS.length : i;
+};
+export const locationColor = (id) => LOCATION_BY_ID[id]?.color || '#8a9aa4';
 /** Events worth a place on the mission timeline (routine readings are not). */
 export const TIMELINE_TYPES = ['solar_particle_event', 'shelter_period', 'eva'];
 
 export const eventLabel = (type) => EVENT_LABELS[type] || String(type || 'Record').replace(/_/g, ' ');
-export const locationLabel = (loc) => LOCATION_LABELS[loc] || loc || '—';
+export const locationLabel = (loc) => LOCATION_BY_ID[loc]?.label || loc || '—';
 export const sourceLabel = (src) =>
   src === 'sensor' ? 'Sensor' : src === 'imported' ? 'Imported' : 'Simulated';
 
@@ -57,8 +75,10 @@ export function normalizeEvents(events = []) {
  */
 export function summarizeRadiation(events = []) {
   const list = normalizeEvents(events);
-  const daily = list
-    .filter((e) => e.type === 'daily_total' && e.doseMsv != null)
+  const dailyAll = list.filter((e) => e.type === 'daily_total' && e.doseMsv != null);
+  // The vehicle average (`cabin`) drives the mission total and RAD-01; module totals feed the chart.
+  const cabinDaily = dailyAll.filter((e) => e.location === 'cabin');
+  const daily = (cabinDaily.length ? cabinDaily : dailyAll)
     .map((e) => ({
       time: dayStart(e.time),
       dose: e.doseMsv,
@@ -66,6 +86,31 @@ export function summarizeRadiation(events = []) {
       spe: /SPE|solar/i.test(e.radiationType),
     }));
   const rates = list.filter((e) => e.type === 'rate_sample' && e.rateUsvH != null);
+
+  // One row per UTC day with a column per location: { time, spe, lab: 0.51, cupola: 0.62, … }.
+  const dayRows = new Map();
+  for (const e of dailyAll) {
+    const time = dayStart(e.time);
+    const row = dayRows.get(time) || { time, spe: false };
+    row[e.location] = e.doseMsv;
+    if (/SPE|solar/i.test(e.radiationType)) row.spe = true;
+    dayRows.set(time, row);
+  }
+  const dailyLocations = [...new Set(dailyAll.map((e) => e.location))].sort(
+    (a, b) => locationOrder(a) - locationOrder(b),
+  );
+
+  // Table: the latest day's total for every location, plus the 8 latest other records (events,
+  // surveys). Hourly rate samples have their own chart.
+  const lastDay = dailyAll.length ? dayStart(dailyAll.at(-1).time) : null;
+  const latestTotals = dailyAll
+    .filter((e) => dayStart(e.time) === lastDay)
+    .sort((a, b) => locationOrder(a.location) - locationOrder(b.location));
+  const otherRecords = list
+    .filter((e) => e.type !== 'rate_sample' && e.type !== 'daily_total')
+    .slice(-8)
+    .reverse();
+  const records = [...latestTotals, ...otherRecords].sort((a, b) => b.time - a.time);
   return {
     empty: list.length === 0,
     simulated: list.some((e) => e.source === 'simulated'),
@@ -76,7 +121,9 @@ export function summarizeRadiation(events = []) {
     currentRate: rates.at(-1) || null,
     rates,
     timeline: list.filter((e) => TIMELINE_TYPES.includes(e.type)).reverse(),
-    records: list.filter((e) => e.type !== 'rate_sample').slice(-12).reverse(),
+    byLocation: [...dayRows.values()].sort((a, b) => a.time - b.time),
+    dailyLocations,
+    records,
   };
 }
 

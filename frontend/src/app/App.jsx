@@ -169,8 +169,8 @@ export default function App() {
             <button
               className="link-chip rad-chip"
               onClick={() => navigate('environment')}
-              title="Simulated radiation record · open Environment"
-              aria-label={`Radiation: ${radiation.currentRate ? radiation.currentRate.rateUsvH + ' microsieverts per hour now, ' : ''}${radiation.missionMsv.toFixed(1)} millisieverts this mission (simulated). Open Environment.`}
+              title="Cabin dose rate now · mission dose (simulated) · open Environment"
+              aria-label={`Radiation: ${radiation.currentRate ? radiation.currentRate.rateUsvH + ' microsieverts per hour in the cabin now, ' : ''}${radiation.missionMsv.toFixed(1)} millisieverts this mission (simulated). Open Environment.`}
             >
               <RadiationIcon size={14} />
               {radiation.currentRate ? `${radiation.currentRate.rateUsvH} µSv/h · ` : ''}

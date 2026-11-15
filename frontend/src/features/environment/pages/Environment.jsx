@@ -1,10 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   LineChart,
   Line,
-  BarChart,
-  Bar,
-  Cell,
   XAxis,
   YAxis,
   Tooltip,
@@ -33,13 +30,16 @@ import {
   RATE_UNIT,
   eventLabel,
   locationLabel,
+  locationColor,
   sourceLabel,
+  LOCATIONS,
 } from '../models/radiation.js';
 import { SignalCard } from '../../alerts/components/Signals.jsx';
 
 const tick = { fontSize: 12, fill: '#5a6f7c' };
 const DOSE_COLOR = '#2a78d6';
-const EVENT_COLOR = '#eb6834';
+const EVENT_COLOR = '#a8670f';
+const isDashed = (id) => LOCATIONS.find((l) => l.id === id)?.dashed;
 const mSv = (v, digits = 2) => (v == null ? '—' : Number(v).toFixed(digits));
 const stamp = (t) => `${dateLabel(t)} · ${timeLabel(t)} UTC`;
 const TIMELINE_ICON = { solar_particle_event: Sun, shelter_period: ShieldHalf, eva: Footprints };
@@ -75,8 +75,18 @@ export default function Environment({
     ['humidity', Droplets],
   ];
   const rad = radiation || { empty: true };
-  const daily30 = rad.empty ? [] : rad.daily.slice(-30);
   const ready = !rad.empty;
+  const byDay30 = ready ? rad.byLocation.slice(-30) : [];
+  const locs = ready ? rad.dailyLocations : [];
+  // Highlighted location: hovering a line, a legend item or a table row; a legend click pins it.
+  const [hovered, setHovered] = useState(null),
+    [pinned, setPinned] = useState(null);
+  const focus = hovered || pinned;
+  const dim = (id) => focus && focus !== id;
+  const hoverHandlers = (id) =>
+    locs.includes(id)
+      ? { onMouseEnter: () => setHovered(id), onMouseLeave: () => setHovered(null) }
+      : {};
   return (
     <section className="environment-view">
       <div className="overview-heading">
@@ -111,10 +121,10 @@ export default function Environment({
             <div>
               <h2>
                 <Radiation size={18} />
-                Cabin dose by day
+                Dose by location
               </h2>
               <p>
-                Daily dose equivalent · {DOSE_UNIT} · last {daily30.length || 30} UTC days
+                Daily dose equivalent · {DOSE_UNIT} · last {byDay30.length || 30} UTC days
               </p>
             </div>
             <button className="text-link" onClick={() => onRisk('radiation')}>
@@ -129,50 +139,104 @@ export default function Environment({
               <div
                 className="env-chart"
                 role="img"
-                aria-label={`Daily cabin dose over the last ${daily30.length} days. Days with a solar particle event are highlighted. Values are listed in the records table below.`}
+                aria-label={`Daily dose for ${locs.length} locations over the last ${byDay30.length} days. A solar particle event raises every location on its day. The latest values are listed in the records table below.`}
               >
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={daily30} margin={{ top: 16, right: 16, left: 0, bottom: 4 }}>
+                  <LineChart data={byDay30} margin={{ top: 24, right: 24, left: 0, bottom: 4 }}>
                     <CartesianGrid stroke="#e3eaee" vertical={false} />
                     <XAxis
                       dataKey="time"
+                      type="number"
+                      domain={['dataMin', 'dataMax']}
                       tickFormatter={dateLabel}
                       tick={tick}
                       axisLine={false}
                       tickLine={false}
-                      minTickGap={24}
+                      minTickGap={28}
                     />
                     <YAxis tick={tick} axisLine={false} tickLine={false} width={44} />
+                    {byDay30
+                      .filter((d) => d.spe)
+                      .map((d) => (
+                        <ReferenceLine
+                          key={d.time}
+                          x={d.time}
+                          stroke={EVENT_COLOR}
+                          strokeDasharray="4 4"
+                          label={{
+                            value: 'Solar particle event',
+                            position: 'top',
+                            fill: EVENT_COLOR,
+                            fontSize: 12,
+                          }}
+                        />
+                      ))}
                     <Tooltip
                       labelFormatter={(t) => dateLabel(t) + ' (UTC day)'}
-                      formatter={(v, _k, item) => [
-                        `${mSv(v, 3)} ${DOSE_UNIT}${item.payload.spe ? ' · solar particle event' : ''}`,
-                        'Cabin dose',
-                      ]}
+                      formatter={(v, key) => [`${mSv(v, 3)} ${DOSE_UNIT}`, locationLabel(key)]}
+                      itemSorter={(item) => (item.dataKey === focus ? -1 : 0)}
                       contentStyle={{ borderRadius: 10, border: '1px solid #dbe4ea', fontSize: 13 }}
                     />
-                    <Bar dataKey="dose" radius={[4, 4, 0, 0]} isAnimationActive={false}>
-                      {daily30.map((d) => (
-                        <Cell key={d.time} fill={d.spe ? EVENT_COLOR : DOSE_COLOR} />
-                      ))}
-                    </Bar>
-                  </BarChart>
+                    {locs.map((id) => (
+                      <Line
+                        key={id}
+                        dataKey={id}
+                        name={id}
+                        stroke={locationColor(id)}
+                        strokeWidth={focus === id ? 3 : 2}
+                        strokeOpacity={dim(id) ? 0.15 : 1}
+                        strokeDasharray={isDashed(id) ? '6 4' : undefined}
+                        dot={false}
+                        activeDot={dim(id) ? false : { r: 5 }}
+                        isAnimationActive={false}
+                        {...hoverHandlers(id)}
+                      />
+                    ))}
+                    {/* Invisible wide copies: a comfortable hover target for each thin line. */}
+                    {locs.map((id) => (
+                      <Line
+                        key={'hit-' + id}
+                        dataKey={id}
+                        stroke="transparent"
+                        strokeWidth={14}
+                        dot={false}
+                        activeDot={false}
+                        legendType="none"
+                        tooltipType="none"
+                        isAnimationActive={false}
+                        {...hoverHandlers(id)}
+                      />
+                    ))}
+                  </LineChart>
                 </ResponsiveContainer>
               </div>
-              <div className="rad-legend">
-                <span>
-                  <i style={{ background: DOSE_COLOR }} />
-                  Background (galactic cosmic rays + trapped protons)
-                </span>
-                <span>
-                  <i style={{ background: EVENT_COLOR }} />
-                  Day with a solar particle event
-                </span>
+              <div className="rad-legend" role="group" aria-label="Locations">
+                {locs.map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className={
+                      'rad-legend-item' + (dim(id) ? ' dim' : '') + (pinned === id ? ' pinned' : '')
+                    }
+                    aria-pressed={pinned === id}
+                    title={pinned === id ? 'Click to stop highlighting' : 'Click to highlight'}
+                    onClick={() => setPinned((p) => (p === id ? null : id))}
+                    onFocus={() => setHovered(id)}
+                    onBlur={() => setHovered(null)}
+                    {...hoverHandlers(id)}
+                  >
+                    <i
+                      className={isDashed(id) ? 'dashed' : ''}
+                      style={{ '--c': locationColor(id) }}
+                    />
+                    {locationLabel(id)}
+                  </button>
+                ))}
               </div>
 
               <h3 className="rad-subtitle">
                 <Activity size={16} />
-                Dose rate · last 24 h <small>{RATE_UNIT}</small>
+                Cabin dose rate · last 24 h <small>{RATE_UNIT}</small>
               </h3>
               <div className="env-chart small">
                 <ResponsiveContainer width="100%" height="100%">
@@ -233,11 +297,21 @@ export default function Environment({
                   </thead>
                   <tbody>
                     {rad.records.map((r) => (
-                      <tr key={r.id}>
+                      <tr
+                        key={r.id}
+                        className={'rad-row' + (dim(r.location) ? ' dim' : '')}
+                        style={{ '--c': locationColor(r.location) }}
+                        {...hoverHandlers(r.location)}
+                      >
                         <td>{stamp(r.time)}</td>
                         <td>{eventLabel(r.type)}</td>
                         <td>{r.radiationType}</td>
-                        <td>{locationLabel(r.location)}</td>
+                        <td>
+                          <span className="rad-loc">
+                            <i aria-hidden="true" />
+                            {locationLabel(r.location)}
+                          </span>
+                        </td>
                         <td>{r.instrument}</td>
                         <td>
                           <b>{mSv(r.doseMsv, 3)}</b> {DOSE_UNIT}
@@ -286,7 +360,7 @@ export default function Environment({
                     {rad.currentRate ? number(rad.currentRate.rateUsvH) : '—'} {RATE_UNIT}
                   </b>
                   <small>
-                    Current rate
+                    Cabin rate now
                     {rad.currentRate ? ` · ${timeLabel(rad.currentRate.time)} UTC` : ''}
                   </small>
                 </div>

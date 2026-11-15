@@ -19,6 +19,16 @@ const SOLAR_EVENTS: Array<[number, number, number, number]> = [
   [52, 14, 0.42, 120],
   [2, 6, 1.1, 310],
 ];
+// Modules with their own area dosimeter. `location` is free text: `cabin` is the vehicle average
+// (TEPC), these are the individual modules. level = share of the cabin average; speFactor = how much
+// a solar event multiplies that module's day.
+const MODULES = [
+  { id: 'lab', level: 1.0, speFactor: 2.4, seed: 1, instrument: 'Area dosimeter A-1 (simulated)' },
+  { id: 'quarters', level: 0.85, speFactor: 1.9, seed: 2, instrument: 'Area dosimeter A-2 (simulated)' },
+  { id: 'galley', level: 1.04, speFactor: 2.6, seed: 3, instrument: 'Area dosimeter A-3 (simulated)' },
+  { id: 'cupola', level: 1.22, speFactor: 3.4, seed: 4, instrument: 'Area dosimeter A-4 (simulated)' },
+  { id: 'shelter', level: 0.65, speFactor: 1.3, seed: 5, instrument: 'Storm-shelter area dosimeter (simulated)' },
+];
 // EVAs: [days before today, start hour UTC, hours, dose mSv]
 const EVAS: Array<[number, number, number, number]> = [
   [28, 8, 6.5, 0.27],
@@ -41,12 +51,24 @@ export function radiationRecords(missionStart: Date, today: Date) {
   firstDay.setUTCHours(0, 0, 0, 0);
   const spe = new Map(SOLAR_EVENTS.map(([ago, ...rest]) => [today.getTime() - ago * DAY, rest]));
 
-  // 1. Daily cabin dose (completed UTC days, mission start → yesterday). A solar event adds to its day.
+  // 1. Daily cabin dose, vehicle average (completed UTC days, mission start → yesterday). A solar event
+  //    adds to its day. This average drives the mission total and the RAD-01 signal.
   for (let day = firstDay.getTime(); day < today.getTime(); day += DAY) {
     const rate = 21 * (0.92 + noise(day / DAY) * 0.16); // µSv/h background
     const extra = spe.get(day)?.[1] ?? 0;
     const dose = (rate * 24) / 1000 + extra;
     add({ ts: new Date(day + DAY - 60000), doseMsv: round(dose), doseRateUsvH: round((dose * 1000) / 24, 1), radiationType: extra ? 'Mixed field + SPE protons' : MIXED_FIELD, location: 'cabin', instrument: CABIN_TEPC, eventType: 'daily_total' });
+  }
+
+  // 1b. Daily dose per module (area dosimeters). Shielding differs, so each module has its own level and
+  //     its own response to a solar event (the cupola is the least shielded, the storm shelter the most).
+  for (const module of MODULES) {
+    for (let day = firstDay.getTime(); day < today.getTime(); day += DAY) {
+      const rate = 21 * module.level * (0.94 + noise(day / DAY + module.seed) * 0.12);
+      const isSpe = spe.has(day);
+      const dose = ((rate * 24) / 1000) * (isSpe ? module.speFactor : 1);
+      add({ ts: new Date(day + DAY - 60000), doseMsv: round(dose), doseRateUsvH: round((dose * 1000) / 24, 1), radiationType: isSpe ? 'Mixed field + SPE protons' : MIXED_FIELD, location: module.id, instrument: module.instrument, eventType: 'daily_total' });
+    }
   }
 
   // 2. Hourly cabin dose-rate samples for the last 24 h (the "current dose rate").
