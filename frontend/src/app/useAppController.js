@@ -311,7 +311,15 @@ export function useAppController() {
     crew,
     persistCheckIn: checkinMutation.mutateAsync,
   });
-    const saveMeasurement = createMeasurementController({
+  // The general (no-PIN) assistant thread expires after 5 minutes without new messages, so the next
+  // person at the shared screen doesn't see it.
+  useEffect(() => {
+    setData((d) => {
+      const chatThreads = expireGeneralThread(d.chatThreads, now);
+      return chatThreads === d.chatThreads ? d : { ...d, chatThreads };
+    });
+  }, [now]);
+  const saveMeasurement = createMeasurementController({
     profileFor,
     setData,
     setPrivateApiSignals,
