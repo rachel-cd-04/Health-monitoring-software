@@ -6,6 +6,7 @@ import { applyA11y, readA11y } from '../features/support/models/accessibility.js
 import { apiConfigured } from '../shared/api/apiClient.js';
 import { queryClient } from './queryClient.js';
 import { useSession } from '../features/auth/hooks/useSession.js';
+import { expireGeneralThread } from '../features/auth/models/access.js';
 import { useCrewBootstrap } from '../features/crew/hooks/useCrewBootstrap.js';
 import { crewHistoryKey, fetchCrewHistory } from '../features/crew/hooks/crewQueries.js';
 import { useCreateCheckin } from '../features/checkins/hooks/useCreateCheckin.js';
@@ -310,7 +311,7 @@ export function useAppController() {
     crew,
     persistCheckIn: checkinMutation.mutateAsync,
   });
-  const saveMeasurement = createMeasurementController({
+    const saveMeasurement = createMeasurementController({
     profileFor,
     setData,
     setPrivateApiSignals,
