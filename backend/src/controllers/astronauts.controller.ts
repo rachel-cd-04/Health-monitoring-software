@@ -239,15 +239,41 @@ export async function getHistoryController(req: AuthRequest, res: Response, next
     ]).parse(req.query.indicator);
     const days = z.coerce.number().refine((value) => [7, 30, 180].includes(value)).parse(req.query.days ?? 7);
     const from = new Date(Date.now() - days * 86400000);
-    const points = await prisma.measurement.findMany({ where: { astronautId: id, indicator, ts: { gte: from } }, orderBy: { ts: 'asc' } });
+    const [points, checkins] = await Promise.all([
+      prisma.measurement.findMany({ where: { astronautId: id, indicator, ts: { gte: from } }, orderBy: { ts: 'asc' } }),
+      prisma.checkin.findMany({ where: { astronautId: id, day: { gte: from } }, orderBy: { day: 'asc' } }),
+    ]);
+    const measurementPoints = points.map((point) => ({
+      ts: point.ts,
+      value: Number(point.value),
+      source: point.source,
+    }));
+    const checkinField = {
+      heart_rate: 'heartRate',
+      bp_systolic: 'bpSystolic',
+      bp_diastolic: 'bpDiastolic',
+      blood_sugar: 'bloodSugar',
+      temperature: 'temperature',
+      sleep_hours: 'sleepHours',
+      mood: 'mood',
+      fatigue: 'fatigue',
+      exercise_min: 'exerciseMin',
+    }[indicator] as keyof (typeof checkins)[number];
+    const checkinPoints = checkins.flatMap((checkin) => {
+      const value = checkin[checkinField];
+      return value == null ? [] : [{ ts: checkin.day, value: Number(value), source: checkin.source }];
+    });
+    const measurementDays = new Set(measurementPoints.map((point) => point.ts.toISOString().slice(0, 10)));
+    const combinedPoints = [...measurementPoints, ...checkinPoints.filter((point) => !measurementDays.has(point.ts.toISOString().slice(0, 10)))]
+      .sort((a, b) => a.ts.getTime() - b.ts.getTime());
     const alertRows = await prisma.alert.findMany({ where: { astronautId: id, indicator, ts: { gte: from } }, orderBy: { ts: 'asc' } });
-    const values = points.map((point) => Number(point.value));
+    const values = combinedPoints.map((point) => point.value);
     const mean = values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
     const spread = values.length > 1 ? Math.sqrt(values.reduce((sum, value) => sum + ((value - (mean ?? value)) ** 2), 0) / values.length) : 0;
     res.json(serialize({
       indicator,
       unit: points[0]?.unit ?? null,
-      points: points.map((point) => ({ ts: point.ts, value: point.value, source: point.source })),
+      points: combinedPoints,
       baseline: { mean, low: mean === null ? null : mean - spread, high: mean === null ? null : mean + spread },
       alert_markers: alertRows.map((alert) => ({ ts: alert.ts, rule_id: alert.ruleId })),
       events: [],

@@ -166,7 +166,9 @@ body {
   justify-content: space-between;
   gap: 20px;
   padding: 0 28px 0 4px;
-  position: relative;
+  position: sticky;
+  top: 0;
+  background: var(--canvas);
   z-index: 25;
 }
 .top-mission {

@@ -34,15 +34,12 @@ import {
 } from '../models/envData.js';
 import { SignalCard } from '../../alerts/components/Signals.jsx';
 import { LockedPanel } from '../../auth/components/AccessUI.jsx';
-import { apiConfigured } from '../../../shared/api/apiClient.js';
-import { useRadiationEvents } from '../hooks/useRadiationEvents.js';
 
 // Categorical order validated with the dataviz palette script (light surface). Contrast relief: table view below.
 const series = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4'];
 const tick = { fontSize: 12, fill: '#5a6f7c' };
 
 export default function Environment({ onRisk, now, canView = () => true, onUnlock }) {
-  const radiationEvents = useRadiationEvents(apiConfigured);
   const [person, setPerson] = useState(crew[0].id);
   const dayBucket = Math.floor(now / DAY_MS);
   const halfHourBucket = Math.floor(now / 1800000);
@@ -269,60 +266,6 @@ export default function Environment({ onRisk, now, canView = () => true, onUnloc
           </p>
         </aside>
       </div>
-
-      {apiConfigured && (
-        <section className="panel env-event-log">
-          <div className="panel-title">
-            <div>
-              <h2>Backend radiation event log</h2>
-              <p>Persisted mission events from the radiation API</p>
-            </div>
-          </div>
-          {radiationEvents.isPending ? (
-            <p className="muted">Loading radiation events…</p>
-          ) : radiationEvents.error ? (
-            <p className="banner warning">
-              Could not load radiation events: {radiationEvents.error.message}
-            </p>
-          ) : radiationEvents.data.length ? (
-            <div className="records-table">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Time (UTC)</th>
-                    <th>Location</th>
-                    <th>Radiation</th>
-                    <th>Dose</th>
-                    <th>Dose rate</th>
-                    <th>Type</th>
-                    <th>Source</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {radiationEvents.data.map((event) => (
-                    <tr key={event.id}>
-                      <td>{new Date(event.ts).toLocaleString([], { timeZone: 'UTC' })} UTC</td>
-                      <td>{event.location || 'Not recorded'}</td>
-                      <td>{event.radiation_type || 'Not recorded'}</td>
-                      <td>{event.dose_msv == null ? '—' : `${event.dose_msv} mSv`}</td>
-                      <td>
-                        {event.dose_rate_usv_h == null ? '—' : `${event.dose_rate_usv_h} µSv/h`}
-                      </td>
-                      <td>{event.event_type || '—'}</td>
-                      <td>{event.source}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="routine-message">
-              No radiation events are stored in the backend. The chart above is simulated frontend
-              data.
-            </p>
-          )}
-        </section>
-      )}
 
       <section className="panel env-cabin">
         <div className="panel-title">
