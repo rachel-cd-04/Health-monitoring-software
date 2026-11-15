@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAppController } from './useAppController.js';
+import { apiConfigured } from '../shared/api/apiClient.js';
 import { Activity, Radio, Radiation as RadiationIcon, X, CheckCircle2 } from 'lucide-react';
 import { timeLabel, missionDayNumber, environments } from '../features/crew/models/crewModel.js';
 import {

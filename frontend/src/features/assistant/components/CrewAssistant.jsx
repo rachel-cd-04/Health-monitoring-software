@@ -153,9 +153,10 @@ export default function CrewAssistant({
     }
     voice.toggle();
   };
+  const cancelVoice = voice.cancel;
   useEffect(() => {
-    if (paused) voice.cancel(); // hidden (e.g. minimised): never keep the microphone on
-  }, [paused, voice.cancel]);
+    if (paused) cancelVoice(); // hidden (e.g. minimised): never keep the microphone on
+  }, [paused, cancelVoice]);
   const wasListening = useRef(false);
   useEffect(() => {
     // Back to idle if listening ended without a question (send() switches to 'thinking' otherwise).
