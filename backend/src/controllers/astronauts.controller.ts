@@ -333,6 +333,8 @@ export async function getRoutineController(req: AuthRequest, res: Response, next
     const environment = z.enum(['station', 'transit']).safeParse(req.query.environment ?? 'station');
     if (!environment.success) return sendError(res, 400, 'VALIDATION_ERROR', 'Environment must be station or transit.');
     const today = utcDayStart();
+    const tomorrow = new Date(today);
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
     await Promise.all(routineDefinitions.map(({ item, hours }) => {
       const dueAt = new Date(today);
       dueAt.setUTCHours(hours[environment.data], 0, 0, 0);
@@ -342,17 +344,26 @@ export async function getRoutineController(req: AuthRequest, res: Response, next
         update: {},
       });
     }));
-    const items = await prisma.routineItem.findMany({ where: { astronautId }, orderBy: { dueAt: 'asc' } });
+    const [items, todaysCheckin] = await Promise.all([
+      prisma.routineItem.findMany({ where: { astronautId }, orderBy: { dueAt: 'asc' } }),
+      prisma.checkin.findFirst({
+        where: { astronautId, day: { gte: today, lt: tomorrow } },
+        select: { day: true },
+      }),
+    ]);
     const normalized = await Promise.all(items.map(async (item) => {
       const definition = routineDefinitions.find((routine) => routine.item === item.item);
       if (!definition) return item;
       const dueAt = new Date(today);
       dueAt.setUTCHours(definition.hours[environment.data], 0, 0, 0);
-      const completedToday = Boolean(item.done && item.completedAt && isTodayUTC(item.completedAt));
-      if (item.dueAt.getTime() !== dueAt.getTime() || item.done !== completedToday || (item.completedAt && item.completedAt < today)) {
+      const storedCompletionToday = Boolean(item.done && item.completedAt && isTodayUTC(item.completedAt));
+      const hasDailyCheckin = item.item === 'Daily check-in' && Boolean(todaysCheckin);
+      const completedToday = storedCompletionToday || hasDailyCheckin;
+      const completedAt = storedCompletionToday ? item.completedAt : hasDailyCheckin ? todaysCheckin!.day : null;
+      if (item.dueAt.getTime() !== dueAt.getTime() || item.done !== completedToday || item.completedAt?.getTime() !== completedAt?.getTime()) {
         return prisma.routineItem.update({
           where: { id: item.id },
-          data: { dueAt, done: completedToday, completedAt: completedToday ? item.completedAt : null },
+          data: { dueAt, done: completedToday, completedAt },
         });
       }
       return item;

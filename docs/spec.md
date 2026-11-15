@@ -168,7 +168,7 @@ See `constitution.md`. 100 % synthetic data. At least one NASA resource from the
 | NASA — 5 Hazards | Hazard column of the indicator table; body map explanations |
 | NASA — Risks | Risk context in alerts and guides; rule sources |
 | NASA — Ongoing HRP Research | Data-model design (Standard Measures, ARCHeR, CIPHER, Tempus Pro as *design references only*) |
-| CSA — Monitoring Radiation | Radiation context module (F13, stretch). If F13 is not built, cite it only in the pitch as future work, not as "used" |
+| CSA — Monitoring Radiation | Radiation context module (F13, stretch); its neutron and instrument context is cited, while all SOMA readings remain simulated |
 | CSA — Why Science Experiments | Pitch and report: justification and benefits on Earth |
 
 **Never claim** an integration with CANS, ARCHeR, Tempus Pro or any NASA/CSA dataset. Consulting a scientific page does not make synthetic data NASA data.

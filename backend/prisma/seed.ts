@@ -22,7 +22,7 @@ const sources = [
   ['nasa-risk-bone', 'NASA', 'Risk: spaceflight-induced bone changes', 'https://www.nasa.gov/reference/risk-of-spaceflight-induced-bone-changes/', 'web'],
   ['nasa-hrp-research', 'NASA', 'Ongoing HRP Research in Space', 'https://www.nasa.gov/hrp/ongoing-hrp-research/', 'web'],
   ['nasa-hazard-radiation', 'NASA', 'Hazard: space radiation', 'https://www.nasa.gov/hrp/hazard-space-radiation/', 'web'],
-  ['csa-radiation', 'CSA', 'Monitoring radiation for astronaut health', 'https://www.asc-csa.gc.ca/eng/sciences/radiation.asp', 'web'],
+  ['csa-radiation', 'CSA', 'Monitoring radiation for astronaut health', 'https://www.asc-csa.gc.ca/eng/news/articles/2026/2026-02-26-monitoring-radiation-astronaut-health.asp', 'web'],
 ];
 
 const crew = [
@@ -143,7 +143,12 @@ async function main() {
   for (const [id, agency, title, url, docType] of sources) {
     await prisma.source.upsert({
       where: { id },
-      update: RESET ? { agency, title, url, docType, accessedOn } : {},
+      update:
+        id === 'csa-radiation'
+          ? { url }
+          : RESET
+            ? { agency, title, url, docType, accessedOn }
+            : {},
       create: { id, agency, title, url, docType, accessedOn },
     });
   }
