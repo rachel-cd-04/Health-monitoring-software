@@ -12,9 +12,10 @@ export async function getCrewOverviewController(_req: Request, res: Response, ne
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
     const result = await Promise.all(crew.map(async (item) => {
-      const [alerts, checkin] = await Promise.all([
+      const [alerts, checkin, checkinMeasurement] = await Promise.all([
         activeAlerts(item.id),
-        prisma.checkin.findFirst({ where: { astronautId: item.id, day: { gte: today } }, select: { id: true } }),
+        prisma.checkin.findFirst({ where: { astronautId: item.id, day: { gte: today } }, select: { id: true, day: true } }),
+        prisma.measurement.findFirst({ where: { astronautId: item.id, ts: { gte: today } }, orderBy: { ts: 'asc' }, select: { ts: true } }),
       ]);
       const overall: OverallStatus = alerts.some((a) => a.level === 'red')
         ? 'red'
@@ -31,6 +32,7 @@ export async function getCrewOverviewController(_req: Request, res: Response, ne
         overall,
         active_alert_count: alerts.length,
         checkin_done_today: Boolean(checkin),
+        checkin_time: checkinMeasurement?.ts ?? checkin?.day ?? null,
       };
     }));
     const attentionOrder = { red: 0, amber: 1, grey: 2, green: 3 };

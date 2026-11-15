@@ -80,7 +80,7 @@ export function useSession({ now, profileFor, setData, setPrivateApiSignals, set
           crewId: personId,
           day,
           slot: 'daily',
-          time: Date.parse(`${day}T00:00:00Z`),
+          time: checkin.recorded_at ? new Date(checkin.recorded_at).getTime() : Date.parse(`${day}T00:00:00Z`),
           operator: personId,
           source: checkin.source || 'Backend',
           complete: true,
@@ -99,7 +99,7 @@ export function useSession({ now, profileFor, setData, setPrivateApiSignals, set
       for (const checkin of checkins) {
         const day = String(checkin.day).slice(0, 10);
         const session = dailySessionByDay.get(day);
-        const time = Date.parse(`${day}T00:00:00Z`);
+        const time = checkin.recorded_at ? new Date(checkin.recorded_at).getTime() : Date.parse(`${day}T00:00:00Z`);
         for (const [indicator, field, metric] of checkinMetrics) {
           const value = checkin[field];
           if (value == null) continue;

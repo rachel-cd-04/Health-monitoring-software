@@ -98,7 +98,6 @@ export function CrewOverview({
   access,
   onOpen,
   onMeasure,
-  operator,
   onHistory,
   now,
   isCommander = false,
@@ -135,7 +134,7 @@ export function CrewOverview({
         </div>
         <button
           className="button primary"
-          onClick={() => onMeasure({ crewId: operator.id, slot: 'daily' })}
+          onClick={() => onMeasure()}
         >
           <ScanLine size={18} />
           Start a check-in

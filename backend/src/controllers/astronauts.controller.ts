@@ -18,6 +18,7 @@ function checkinResponse(checkin: {
   fatigue: number | null;
   exerciseMin: unknown;
   source: string;
+  recordedAt?: Date | null;
 }) {
   return {
     id: checkin.id,
@@ -33,6 +34,7 @@ function checkinResponse(checkin: {
     fatigue: checkin.fatigue,
     exercise_min: checkin.exerciseMin,
     source: checkin.source,
+    recorded_at: checkin.recordedAt ?? null,
   };
 }
 
@@ -189,12 +191,24 @@ export async function listCheckinsController(req: AuthRequest, res: Response, ne
     const since = new Date();
     since.setUTCHours(0, 0, 0, 0);
     since.setUTCDate(since.getUTCDate() - days + 1);
-    const checkins = await prisma.checkin.findMany({
-      where: { astronautId, day: { gte: since } },
-      orderBy: { day: 'desc' },
-    });
-    res.json(serialize(checkins.map(checkinResponse)));
-  } catch (e) {
+    const [checkins, measurements] = await Promise.all([
+      prisma.checkin.findMany({
+        where: { astronautId, day: { gte: since } },
+        orderBy: { day: 'desc' },
+      }),
+      prisma.measurement.findMany({
+        where: { astronautId, ts: { gte: since } },
+        orderBy: { ts: 'asc' },
+        select: { ts: true },
+      }),
+    ]);
+    const recordedAtByDay = new Map(
+      measurements.map((measurement) => [measurement.ts.toISOString().slice(0, 10), measurement.ts]),
+    );
+    res.json(serialize(checkins.map((checkin) => checkinResponse({
+      ...checkin,
+      recordedAt: recordedAtByDay.get(checkin.day.toISOString().slice(0, 10)),
+    }))));  } catch (e) {
     next(e);
   }
 }

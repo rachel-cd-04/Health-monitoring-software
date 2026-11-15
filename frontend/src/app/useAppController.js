@@ -91,7 +91,7 @@ export function useAppController() {
           crewId: profile?.frontendId,
           day: today,
           slot: 'daily',
-          time: Date.parse(`${today}T00:00:00Z`),
+          time: person.checkin_time ? new Date(person.checkin_time).getTime() : Date.parse(`${today}T00:00:00Z`),
           operator: profile?.frontendId,
           source: 'Backend',
           complete: true,
@@ -283,8 +283,8 @@ export function useAppController() {
       setView('crew');
     });
   const openStation = (initial) => {
-    if (!access.all && access.ids.length === 0) {
-      setCheckInPicker(initial);
+    if (!initial?.crewId) {
+      setCheckInPicker({ slot: 'daily' });
       return;
     }
     requestAccess(initial.crewId, () => setStation(initial));

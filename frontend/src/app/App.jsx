@@ -223,7 +223,6 @@ export default function App() {
             access={access}
             isCommander={profileFor(access.ids[0])?.role === 'commander'}
             onRisk={setRiskSheet}
-            operator={operator}
             onOpen={openPerson}
             onMeasure={openStation}
             onMedical={() => navigate('medical')}
