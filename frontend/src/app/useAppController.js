@@ -231,10 +231,10 @@ export function useAppController() {
   const radiationEvents = radiationQuery.data;
   const radiation = useMemo(() => summarizeRadiation(radiationEvents || []), [radiationEvents]);
   const envSignals = useMemo(
-    () => [...environmentSignals(now), routineItems, ...radiationSignals(radiationEvents || [], now)],
+    () => [...environmentSignals(now), ...radiationSignals(radiationEvents || [], now)],
     [radiationEvents, now],
   );
-  const notif = notificationModel(data, now, signals, environmentSignals(now), routineItems);
+  const notif = notificationModel(data, now, signals, [], routineItems);
   const snoozeReminder = (id) => {
     setData((d) => ({
       ...d,
@@ -405,7 +405,11 @@ export function useAppController() {
   return {
     access,
     radiation,
-    radiationStatus: radiationQuery.isPending ? 'loading' : radiationQuery.isError ? 'error' : 'ready',
+    radiationStatus: radiationQuery.isPending
+      ? 'loading'
+      : radiationQuery.isError
+        ? 'error'
+        : 'ready',
     envSignals,
     acknowledge,
     activeEmergency,

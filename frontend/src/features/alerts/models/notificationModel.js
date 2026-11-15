@@ -1,8 +1,8 @@
 import { reminderItems } from '../../checkins/models/reminders.js';
 import { routineReminderId } from '../../routine/services/routineService.js';
 
-/** What the shared screen may announce: check-in reminders, environment events and closed emergencies.
- *  No health values, rule flags, symptoms or report contents ever appear here. */
+/** What the shared screen may announce: check-in reminders and closed emergencies.
+ *  Synthetic environment context stays on the Environment screen, not in the alert count. */
 export const RESOLVED_WINDOW = 24 * 3600000,
   RESOLVED_FRESH = 3600000;
 export function notificationModel(data, now, _signals, envSignals = [], routineItems = []) {

@@ -278,6 +278,7 @@ export default function App() {
             canView={can}
             onUnlock={requestAccess}
             profileFor={profileFor}
+            missionEvents={radiation.timeline}
           />
         )}
         {view === 'environment' && (

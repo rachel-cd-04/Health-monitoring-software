@@ -17,7 +17,7 @@ import {
 } from '../../crew/models/crewModel.js';
 import SampleChart from '../components/Charts.jsx';
 import { crewHistoryKey, fetchCrewHistory } from '../../crew/hooks/crewQueries.js';
-import { missionHistoryEvents } from '../../environment/models/envData.js';
+import { missionHistoryEvents } from '../../environment/models/radiation.js';
 
 const apiIndicatorByMetric = {
   pulse: 'heart_rate',
@@ -40,6 +40,7 @@ export default function History({
   canView = () => true,
   onUnlock,
   profileFor,
+  missionEvents = [],
 }) {
   const [who, setWho] = useState(initialPerson || (crew.find((c) => canView(c.id)) || crew[0]).id),
     [metric, setMetric] = useState(initialMetric || 'pulse'),
@@ -98,9 +99,9 @@ export default function History({
   const chartEvents = useMemo(
     () => [
       ...(backendHistory.data?.events || []),
-      ...missionHistoryEvents(who, now, Math.min(days, 180)),
+      ...missionHistoryEvents(missionEvents, now, Math.min(days, 180)),
     ],
-    [backendHistory.data?.events, who, now, days],
+    [backendHistory.data?.events, missionEvents, now, days],
   );
   const deltaText = (() => {
     if (!latestRow || base.status !== 'ready') return null;

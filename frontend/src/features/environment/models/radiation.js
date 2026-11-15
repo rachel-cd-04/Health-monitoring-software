@@ -36,7 +36,8 @@ export const locationColor = (id) => LOCATION_BY_ID[id]?.color || '#8a9aa4';
 /** Events worth a place on the mission timeline (routine readings are not). */
 export const TIMELINE_TYPES = ['solar_particle_event', 'shelter_period', 'eva'];
 
-export const eventLabel = (type) => EVENT_LABELS[type] || String(type || 'Record').replace(/_/g, ' ');
+export const eventLabel = (type) =>
+  EVENT_LABELS[type] || String(type || 'Record').replace(/_/g, ' ');
 export const locationLabel = (loc) => LOCATION_BY_ID[loc]?.label || loc || '—';
 export const sourceLabel = (src) =>
   src === 'sensor' ? 'Sensor' : src === 'imported' ? 'Imported' : 'Simulated';
@@ -78,13 +79,12 @@ export function summarizeRadiation(events = []) {
   const dailyAll = list.filter((e) => e.type === 'daily_total' && e.doseMsv != null);
   // The vehicle average (`cabin`) drives the mission total and RAD-01; module totals feed the chart.
   const cabinDaily = dailyAll.filter((e) => e.location === 'cabin');
-  const daily = (cabinDaily.length ? cabinDaily : dailyAll)
-    .map((e) => ({
-      time: dayStart(e.time),
-      dose: e.doseMsv,
-      rate: e.rateUsvH,
-      spe: /SPE|solar/i.test(e.radiationType),
-    }));
+  const daily = (cabinDaily.length ? cabinDaily : dailyAll).map((e) => ({
+    time: dayStart(e.time),
+    dose: e.doseMsv,
+    rate: e.rateUsvH,
+    spe: /SPE|solar/i.test(e.radiationType),
+  }));
   const rates = list.filter((e) => e.type === 'rate_sample' && e.rateUsvH != null);
 
   // One row per UTC day with a column per location: { time, spe, lab: 0.51, cupola: 0.62, … }.
@@ -125,6 +125,25 @@ export function summarizeRadiation(events = []) {
     dailyLocations,
     records,
   };
+}
+
+/** Mission events from the backend radiation record for overlays on personal health trends. */
+export function missionHistoryEvents(events = [], now = Date.now(), days = 180) {
+  const from = now - days * DAY;
+  return events
+    .filter(
+      (event) => TIMELINE_TYPES.includes(event.type) && event.time >= from && event.time <= now,
+    )
+    .map((event) => {
+      const location =
+        event.location && event.location !== event.type ? locationLabel(event.location) : null;
+      return {
+        id: `mission-${event.id}`,
+        ts: event.time,
+        label: [eventLabel(event.type), location].filter(Boolean).join(' · '),
+        source: `${sourceLabel(event.source).toLowerCase()} mission record`,
+      };
+    });
 }
 
 /**
