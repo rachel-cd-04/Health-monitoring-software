@@ -1,6 +1,10 @@
-# SOMA · Astronaut Health Monitor
+<p align="center">
+  <img src="frontend/public/favicon.svg" alt="SOMA logo" width="96" />
+</p>
 
-SOMA is a **web application** (it runs in the browser, with nothing to install) for health monitoring and decision support on long-duration space missions. Built for the NASA Space Apps Challenge 2026 challenge **Create Health Monitoring Software for Astronauts on Space Missions**.
+<h1 align="center">SOMA · Astronaut Health Monitor</h1>
+
+SOMA is a **web application** (it runs in the browser, with nothing to install) for health monitoring and decision support on long-duration space missions. Built for the NASA Space Apps Challenge 2026 challenge **Create Health Monitoring Software for Astronauts on Space Missions**. Made by team **Astro Coders 2026**: Raquel Cámara, Pablo Dueñas, Emilliano Recuenco and José Miguel Vergara.
 
 <p align="center">
   <img src="https://img.shields.io/badge/React-19.3.1-61DAFB?logo=react&logoColor=white" alt="React 19.3.1" />
@@ -151,6 +155,32 @@ As a web app, SOMA is responsive and works in the browser on tablets as well as 
 <p align="center">
   <img src="docs/screenshots/tablet.png" alt="Environment screen in tablet layout" width="40%" />
 </p>
+
+## AI usage and Spec-Driven Development
+
+We used AI in two different ways, and we keep them separate on purpose.
+
+### AI inside the product (runtime)
+
+- The only AI feature is the optional **SOMA assistant**. It calls a hosted model through the OpenAI-compatible SDK, using the **free NVIDIA NIM API** (default model `nvidia/nemotron-3.5-super-vl-120b-a12b`, configurable with `LLM_MODEL`).
+- **Rules decide, AI explains.** Statuses and alerts come from a deterministic, versioned rule engine. The model never computes risk or invents thresholds. It explains saved records and guides, cites sources and does not diagnose.
+- The assistant runs a short, bounded loop (at most a few tool rounds per question) and only has **read-only** tools, scoped to the signed-in profile. Without a PIN it cannot see private data.
+- If the key is missing or the provider fails, the chat reports that it is unavailable and logging, alerts, history, routine and Emergency mode keep working.
+- It is a hosted service, so it is **not autonomous**: it would not work on a real mission without an on-board model. Any OpenAI-compatible server can replace it through `LLM_BASE_URL`.
+
+### AI to build the project (development)
+
+We built SOMA with AI coding assistants (including Claude Code) following **Spec-Driven Development (SDD)**: we wrote the specification first, and the AI implemented against it, instead of prompting for code. All specs live in [`docs/`](docs/):
+
+| Step | Document | What it fixes |
+|---|---|---|
+| 1. Principles | [`constitution.md`](docs/constitution.md) | Ten non-negotiable rules that every spec, task and piece of code, human- or AI-written, must follow (not a medical device, rules decide and AI explains, honest data, no overclaiming…). |
+| 2. Scope | [`features.md`](docs/features.md) | Features from the challenge statement, with priorities (P0, P1, stretch). |
+| 3. Specification | [`spec.md`](docs/spec.md) | Requirements with ids (`HM-xx`, `MOD-xx`): users, privacy levels, indicators, alerts, emergency flow. |
+| 4. Plan | [`plan.md`](docs/plan.md) | Stack and architecture. |
+| 5. Contract | [`specs/api-contract.md`](docs/specs/api-contract.md) | The API shapes, declared as the source of truth: backend and frontend are both built against it. |
+| 6. Tasks | [`tasks.md`](docs/tasks.md) | Ordered, small tasks. Working order per feature: contract, then implementation. |
+| 7. Verification | [`verification.md`](docs/verification.md), [`specs/traceability.md`](docs/specs/traceability.md), [`testing.md`](docs/testing.md) | A checklist per requirement, plus REST Client and Cypress tests. |
 
 ## Data and limitations
 
