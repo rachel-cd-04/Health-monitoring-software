@@ -175,7 +175,7 @@ export default React.memo(function SampleChart({
                 }}
               />
             )}
-            {visibleEvents.map((event) => (
+            {visibleEvents.map((event, index) => (
               <ReferenceLine
                 key={event.id || `${event.ts}-${event.label}`}
                 x={new Date(event.ts ?? event.time).getTime()}
@@ -186,6 +186,7 @@ export default React.memo(function SampleChart({
                   position: 'insideTop',
                   fill: '#8a5a12',
                   fontSize: 10,
+                  dy: (index % 3) * 18,
                 }}
               />
             ))}
