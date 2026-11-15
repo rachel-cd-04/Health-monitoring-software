@@ -1,6 +1,6 @@
 # SOMA · Astronaut Health Monitor
 
-Health monitoring and decision-support prototype for long-duration space missions. Built for the NASA Space Apps Challenge 2026 challenge **Create Health Monitoring Software for Astronauts on Space Missions**.
+SOMA is a **web application** (it runs in the browser, with nothing to install) for health monitoring and decision support on long-duration space missions. Built for the NASA Space Apps Challenge 2026 challenge **Create Health Monitoring Software for Astronauts on Space Missions**.
 
 <p align="center">
   <img src="https://img.shields.io/badge/React-19.3.1-61DAFB?logo=react&logoColor=white" alt="React 19.3.1" />
@@ -12,80 +12,151 @@ Health monitoring and decision-support prototype for long-duration space mission
   <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3FCF8E?logo=supabase&logoColor=white" alt="Supabase PostgreSQL" />
 </p>
 
-| Live application | Backend API and OpenAPI docs |
+| Live web app | Backend API |
 |---|---|
-| [soma-crew.vercel.app](https://soma-crew.vercel.app/) | [API docs](https://backend-sandy-pi-25.vercel.app/docs/) · [Health](https://backend-sandy-pi-25.vercel.app/health) |
+| [soma-crew.vercel.app](https://soma-crew.vercel.app/) | [API docs](https://backend-sandy-pi-25.vercel.app/docs/)
+
+## Try the demo
+
+Open the [live web app](https://soma-crew.vercel.app/) and you can explore it right away. No sign-up is needed: pick one of the four fictional crew profiles and enter its PIN.
+
+| Profile | Role | PIN |
+|---|---|---|
+| Ana Vega | Commander | `1111` |
+| Leo Soler | Crew | `2222` |
+| Inés Vidal | Crew | `3333` |
+| Noa Ríos | Crew | `4444` |
+
+How access works:
+
+- **Without a PIN** you see the shared crew screen: general status only. Private records stay locked.
+- **With a profile PIN** you open that astronaut's private data: body map, alerts, measurements, history and routine.
+- **Commander (Ana Vega)** also sees additional crew health and alert information.
+- **Emergency** never asks for a PIN: the red Emergency button is always available.
+- Three wrong PIN attempts lock the keypad for a short time.
 
 ## Features
-
-Every feature below has a reserved screenshot location. Add the image at the listed path when ready.
 
 ### Crew dashboard and body map
 View crew status, open an astronaut profile and navigate health systems through an interactive body map.
 
-**Screenshot:** `docs/screenshots/crew-dashboard.png`
+<p align="center">
+  <img src="docs/screenshots/crew_dashboard.png" alt="Crew health dashboard with the four crew cards" width="49%" />
+  <img src="docs/screenshots/body_map.png" alt="Astronaut profile with interactive body map" width="49%" />
+</p>
 
 ### Measurements and daily check-in
 Record heart rate, blood pressure, blood sugar, temperature, sleep, mood, fatigue and exercise individually or as a daily check-in.
 
-**Screenshot:** `docs/screenshots/measurements-checkin.png`
+<p align="center">
+  <img src="docs/screenshots/log_measure.png" alt="Log a measurement dialog" width="49%" />
+  <img src="docs/screenshots/check_in.png" alt="Daily check-in" width="49%" />
+</p>
 
 ### Measurement guides
 Read practical measurement instructions, context, illustrative ranges and suggested next steps for each indicator.
 
-**Screenshot:** `docs/screenshots/measurement-guides.png`
+<p align="center">
+  <img src="docs/screenshots/log_measure_explication.png" alt="Measurement guide opened in the measurement dialog" width="80%" />
+</p>
 
 ### Health alerts
 See rule-based alerts with the reason, who should act, source references and suggested actions. Alerts are acknowledged in the app and are not diagnoses.
 
-**Screenshot:** `docs/screenshots/health-alerts.png`
+<p align="center">
+  <img src="docs/screenshots/alerts_crew.png" alt="Red cardiovascular alert with who acts and why it was flagged" width="80%" />
+</p>
 
 ### Health history and trends
 Review saved measurements over time and compare readings with a personal baseline.
 
-**Screenshot:** `docs/screenshots/health-history.png`
+<p align="center">
+  <img src="docs/screenshots/history.png" alt="Health history and trends" width="80%" />
+</p>
 
 ### Mission routine and reminders
 See daily check-in, exercise and sleep/recovery tasks. Their due times adapt to station or transit environment, and completing a related measurement updates the routine.
 
-**Screenshot:** `docs/screenshots/routine-reminders.png`
+<p align="center">
+  <img src="docs/screenshots/reminders.png" alt="Mission routine and reminders" width="80%" />
+</p>
 
 ### Notifications
 Review due check-ins, routine tasks and recent resolved alerts from the notification center.
 
-**Screenshot:** `docs/screenshots/notifications.png`
+<p align="center">
+  <img src="docs/screenshots/notifications.png" alt="Notification center" width="80%" />
+</p>
 
 ### Emergency mode
 Follow a step-by-step guide for emergency scenarios and record a simulated onboard report. SOMA does not contact a real medical team.
 
-**Screenshot:** `docs/screenshots/emergency-mode.png`
+<p align="center">
+  <img src="docs/screenshots/emergency.png" alt="Emergency mode" width="80%" />
+</p>
+
+### Ground support report
+Write a question or handover for the medical team on Earth, with saved data attached. Delivery is simulated; no real flight surgeon or medical service is contacted.
+
+<p align="center">
+  <img src="docs/screenshots/ground_support.png" alt="Ground support report form and queue" width="80%" />
+</p>
 
 ### Mission environment and radiation context
 Switch between station and transit context, and inspect cabin-environment and radiation views. Radiation readings are simulated; no dosimeter is connected.
 
-**Screenshot:** `docs/screenshots/environment-radiation.png`
+<p align="center">
+  <img src="docs/screenshots/environment.png" alt="Environment and radiation" width="80%" />
+</p>
 
 ### Crew and commander view
 Review crew-wide status. Commander access can open additional crew health and alert information.
 
-**Screenshot:** `docs/screenshots/crew-commander.png`
+<p align="center">
+  <img src="docs/screenshots/commander_view.png" alt="Crew view with commander access" width="80%" />
+</p>
 
 ### Assistant and reference library
 Ask questions about saved records and health topics; review the NASA/CSA references used by the prototype. The hosted AI provider is optional and the assistant does not diagnose.
 
-**Screenshot:** `docs/screenshots/assistant-sources.png`
+<p align="center">
+  <img src="docs/screenshots/IA_chatbot.png" alt="SOMA assistant chat" width="49%" />
+  <img src="docs/screenshots/references.png" alt="Reference library" width="49%" />
+</p>
 
 ### Settings and accessibility
 Adjust the app's appearance and supported accessibility preferences.
 
-**Screenshot:** `docs/screenshots/settings.png`
+<p align="center">
+  <img src="docs/screenshots/settings.png" alt="Settings and accessibility" width="80%" />
+</p>
+
+### Loading screen
+While the app connects to the health service and loads crew and mission data, SOMA shows a loading screen.
+
+<p align="center">
+  <img src="docs/screenshots/reloading.png" alt="Connecting to SOMA loading screen" width="80%" />
+</p>
+
+### Page not found
+Unknown addresses show a 404 page with a button back to the home screen.
+
+<p align="center">
+  <img src="docs/screenshots/error_page.png" alt="404 page not found" width="80%" />
+</p>
+
+### Tablet layout
+As a web app, SOMA is responsive and works in the browser on tablets as well as desktop screens: the side navigation moves to a bottom bar and the content reflows to fit the narrower width.
+
+<p align="center">
+  <img src="docs/screenshots/tablet.png" alt="Environment screen in tablet layout" width="40%" />
+</p>
 
 ## Data and limitations
 
 - Crew profiles and seed measurements are fictional. Seeded readings are labeled `simulated`.
 - Radiation and cabin-environment values are synthetic. SOMA does not integrate a NASA/CSA dataset or instrument, including CANS.
 - Alert thresholds and suggested emergency actions are illustrative prototype rules, not clinically validated flight-medicine limits.
-- The profile PIN is demo-level access control, not production authentication. Do not use real personal health data.
 - Ground-support/report delivery is simulated; no real flight surgeon or medical service is contacted.
 
 ## Sources
@@ -144,17 +215,6 @@ npm run dev
 
 Open [`http://localhost:5173`](http://localhost:5173). `VITE_API_URL` must point to the backend. Vite exposes `VITE_*` values in the browser bundle, so never put database passwords, JWT secrets or AI-provider keys there.
 
-### Demo profiles
-
-| Profile | Role | Demo PIN |
-|---|---|---|
-| Ana Vega | Commander | `1111` |
-| Leo Soler | Crew | `2222` |
-| Inés Vidal | Crew | `3333` |
-| Noa Ríos | Crew | `4444` |
-
-These fictional profiles and PINs are for local demonstration only.
-
 ## Environment variables
 
 Use separate files for frontend and backend. The repository provides [`frontend/.env.example`](frontend/.env.example) and [`backend/.env.example`](backend/.env.example). Keep `.env` and `.env.local` files out of Git.
@@ -178,15 +238,6 @@ Use separate files for frontend and backend. The repository provides [`frontend/
 | Variable | Required | Purpose |
 |---|---:|---|
 | `VITE_API_URL` | Yes | Public base URL of the backend API, without a trailing slash. |
-
-## Deployments
-
-The production deployments are hosted on Vercel:
-
-- Frontend: [https://soma-crew.vercel.app/](https://soma-crew.vercel.app/)
-- Backend: [https://backend-sandy-pi-25.vercel.app/](https://backend-sandy-pi-25.vercel.app/)
-
-Frontend and backend are deployed as separate Vercel projects. GitHub Actions builds and deploys the relevant app when changes are pushed to `main`. Configure the Vercel and application environment variables in GitHub Actions and in the matching Vercel project. `npm install` followed by `npm run dev` runs the app locally; it does not deploy to production.
 
 ## Tests
 
@@ -223,4 +274,3 @@ Frontend and backend are deployed as separate Vercel projects. GitHub Actions bu
    npm run cypress:run
    ```
 
-The current frontend GitHub Actions workflow does not run Cypress.
