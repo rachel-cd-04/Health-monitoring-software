@@ -81,14 +81,15 @@ Example indicators named in the statement: **blood pressure, heart rate, blood s
 | Exercise | min | number |
 
 **Elements:**
-- Daily check-in (sleep, mood, fatigue) completable in < 30 s
-- "Log a measurement" with indicator picker
+- Two separate entry paths: **log one measurement** or **complete the daily check-in**; neither path requires completing the other
+- "Log a measurement" opens an indicator picker and saves the selected indicator on its own; blood pressure is one indicator with systolic and diastolic values
+- Daily check-in groups sleep, mood and fatigue and is completable in < 30 s
 - **"How do I measure this?"** link next to every field → F3
-- Instant feedback after saving: "Normal for you" / "Higher than usual — see why"
+- After saving, show the value, applicable backend alert, and personal comparison when enough history exists; otherwise show the guide's illustrative range and relevant measurement guidance without implying a diagnosis
 
-**States:** empty · already logged today · out-of-range input error · saved (with or without alert)
+**States:** empty · already logged today (for the daily check-in) · out-of-range input error · saved (with or without alert)
 
-**Design questions:** faces or numbers for mood? One long form or one indicator per card?
+**Design questions:** faces or numbers for mood? How should the individual measurement form distinguish numeric input from paired blood-pressure input?
 
 ---
 

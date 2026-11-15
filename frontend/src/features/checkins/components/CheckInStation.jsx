@@ -32,6 +32,7 @@ import {
   buildQuickCheckIn,
 } from '../models/checkInFlow.js';
 import MeasurementVisual from '../../health/components/MeasurementVisual.jsx';
+import { GUIDES, INDICATORS, LOG_ITEMS } from '../../health/data/indicators.js';
 
 const steps = [
   ['setup', 'Get ready'],
@@ -91,10 +92,11 @@ export default function CheckInStation({
   Modal,
   onClose,
   onSave,
+  onSaveMeasurement,
 }) {
   const [who, setWho] = useState(initial.crewId),
     [slot, setSlot] = useState(initial.slot || nextSlot(data, initial.crewId));
-  const [phase, setPhase] = useState('setup'),
+  const [phase, setPhase] = useState('choice'),
     [furthest, setFurthest] = useState(0),
     [ready, setReady] = useState(false),
     [quality, setQuality] = useState(false),
@@ -109,11 +111,16 @@ export default function CheckInStation({
   const [issue, setIssue] = useState(null),
     [closing, setClosing] = useState(false),
     [savedSession, setSavedSession] = useState(null);
+  const [selectedItem, setSelectedItem] = useState('heart_rate'),
+    [measurementValues, setMeasurementValues] = useState({}),
+    [savedMeasurement, setSavedMeasurement] = useState(null),
+    [savingMeasurement, setSavingMeasurement] = useState(false);
   const person = crew.find((c) => c.id === who),
     complete = slot === 'unscheduled' ? null : checkIn(data, who, slot),
     index = steps.findIndex(([id]) => id === phase);
   const dirty =
     Object.values(values).some((v) => v !== '') ||
+    Object.values(measurementValues).some((v) => v !== '') ||
     sleep !== '' ||
     mood !== '' ||
     fatigue !== '' ||
@@ -178,6 +185,32 @@ export default function CheckInStation({
     }
     next('review');
   };
+  const submitMeasurement = async (e) => {
+    e.preventDefault();
+    const item = LOG_ITEMS.find((candidate) => candidate.id === selectedItem);
+    if (
+      !item ||
+      item.fields.some((field) => String(measurementValues[field] ?? '').trim() === '')
+    ) {
+      setIssue({ message: 'Enter every value for the selected measurement.' });
+      return;
+    }
+    setIssue(null);
+    setSavingMeasurement(true);
+    try {
+      const result = await onSaveMeasurement({
+        crewId: who,
+        itemId: selectedItem,
+        values: measurementValues,
+      });
+      setSavedMeasurement(result);
+      setPhase('measurementSaved');
+    } catch (error) {
+      setIssue({ message: error.message || 'Could not save this measurement.' });
+    } finally {
+      setSavingMeasurement(false);
+    }
+  };
   const finish = async () => {
     if (slot !== 'unscheduled' && checkIn(data, who, slot)) {
       setIssue({ message: 'This check-in has already been completed. Open History to review it.' });
@@ -203,11 +236,11 @@ export default function CheckInStation({
     }
   };
   const close = () => {
-    if (dirty && phase !== 'saved') setClosing(true);
+    if (dirty && phase !== 'saved' && phase !== 'measurementSaved') setClosing(true);
     else onClose();
   };
   return (
-    <Modal title={`${slotNames[slot]} check-in · ${person.name}`} onClose={close} wide>
+    <Modal title={`Health entry · ${person.name}`} onClose={close} wide>
       <div className="quick-checkin">
         <header className="quick-header">
           <div className="quick-person">
@@ -217,13 +250,15 @@ export default function CheckInStation({
             <div>
               <b>{person.name}</b>
               <small>
-                {slotNames[slot]} · {data.schedule[slot]} UTC
+                {phase === 'measurement' || phase === 'measurementSaved'
+                  ? 'Individual measurement'
+                  : `${slotNames[slot]} · ${data.schedule[slot]} UTC`}
               </small>
             </div>
           </div>
           <span className="quick-operator">Recorded by {operator.name}</span>
         </header>
-        {phase !== 'saved' && (
+        {!['saved', 'measurementSaved'].includes(phase) && steps.some(([id]) => id === phase) && (
           <nav className="quick-stepper" aria-label="Check-in steps">
             {steps.map(([id, label], i) => (
               <button
@@ -344,6 +379,220 @@ export default function CheckInStation({
                   This demonstration guide supports the approved mission procedure and instrument
                   instructions.
                 </p>
+              </div>
+            )}
+            {phase === 'choice' && (
+              <div className="quick-phase entry-choice" key="choice">
+                <div className="quick-heading">
+                  <span className="section-kicker">Choose how to record health data</span>
+                  <h2>What would you like to record?</h2>
+                  <p>You can save one measurement on its own or complete today’s check-in.</p>
+                </div>
+                <button className="entry-choice-card" onClick={() => setPhase('measurement')}>
+                  <span className="entry-choice-icon">
+                    <Activity size={24} />
+                  </span>
+                  <span>
+                    <b>Log one measurement</b>
+                    <small>Choose a single indicator. Blood pressure includes both values.</small>
+                  </span>
+                  <ArrowRight size={18} />
+                </button>
+                <button className="entry-choice-card" onClick={() => setPhase('setup')}>
+                  <span className="entry-choice-icon">
+                    <CalendarCheck size={24} />
+                  </span>
+                  <span>
+                    <b>Complete daily check-in</b>
+                    <small>Follow the guided session for today’s health readings.</small>
+                  </span>
+                  <ArrowRight size={18} />
+                </button>
+              </div>
+            )}
+            {phase === 'measurement' && (
+              <form
+                className="quick-phase individual-measurement"
+                key="measurement"
+                onSubmit={submitMeasurement}
+              >
+                <div className="quick-heading">
+                  <span className="section-kicker">One individual reading</span>
+                  <h2>Log a measurement</h2>
+                  <p>
+                    Select one indicator, enter the completed reading and save it to your health
+                    record.
+                  </p>
+                </div>
+                <label className="measurement-select-label" htmlFor="measurement-indicator">
+                  Indicator
+                </label>
+                <select
+                  id="measurement-indicator"
+                  value={selectedItem}
+                  onChange={(event) => {
+                    setSelectedItem(event.target.value);
+                    setMeasurementValues({});
+                    setIssue(null);
+                  }}
+                >
+                  {LOG_ITEMS.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+                <div
+                  className={
+                    'individual-measurement-fields ' +
+                    (LOG_ITEMS.find((item) => item.id === selectedItem)?.fields.length > 1
+                      ? 'paired'
+                      : 'single')
+                  }
+                >
+                  {LOG_ITEMS.find((item) => item.id === selectedItem)?.fields.map((field) => {
+                    const indicator = INDICATORS[field];
+                    const label =
+                      selectedItem === 'blood_pressure'
+                        ? field === 'bp_systolic'
+                          ? 'Systolic pressure'
+                          : 'Diastolic pressure'
+                        : indicator.label;
+                    return (
+                      <label key={field} htmlFor={`individual-${field}`}>
+                        {label}
+                        <span className="individual-value-input">
+                          <input
+                            id={`individual-${field}`}
+                            type="number"
+                            inputMode="decimal"
+                            min={indicator.min}
+                            max={indicator.max}
+                            step={indicator.step}
+                            value={measurementValues[field] ?? ''}
+                            required
+                            onChange={(event) => {
+                              setMeasurementValues((current) => ({
+                                ...current,
+                                [field]: event.target.value,
+                              }));
+                              setIssue(null);
+                            }}
+                          />
+                          <span>{indicator.unit}</span>
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+                <details className="individual-guide">
+                  <summary>How do I measure this?</summary>
+                  <ul>
+                    {(
+                      GUIDES[LOG_ITEMS.find((item) => item.id === selectedItem)?.guide]?.steps || []
+                    ).map((step) => (
+                      <li key={step}>{step}</li>
+                    ))}
+                  </ul>
+                </details>
+                {issue && (
+                  <p className="error-text" role="alert">
+                    {issue.message}
+                  </p>
+                )}
+                <div className="individual-measurement-actions">
+                  <button
+                    type="button"
+                    className="button subtle"
+                    onClick={() => {
+                      setIssue(null);
+                      setPhase('choice');
+                    }}
+                  >
+                    Back
+                  </button>
+                  <button className="button primary" disabled={savingMeasurement}>
+                    {savingMeasurement ? 'Saving…' : 'Save measurement'}
+                  </button>
+                </div>
+              </form>
+            )}
+            {phase === 'measurementSaved' && savedMeasurement && (
+              <div className="quick-phase measurement-result" key="measurement-saved">
+                <div className="quick-heading">
+                  <span className="section-kicker">
+                    Saved · {stamp(savedMeasurement.timestamp)}
+                  </span>
+                  <h2>{savedMeasurement.item.label}</h2>
+                </div>
+                <div className="measurement-result-values">
+                  {savedMeasurement.readings.map((reading) => (
+                    <span key={reading.id}>
+                      <b>
+                        {reading.indicator === 'bp_systolic'
+                          ? 'Systolic'
+                          : reading.indicator === 'bp_diastolic'
+                            ? 'Diastolic'
+                            : savedMeasurement.item.label}
+                      </b>
+                      {Number(reading.value).toLocaleString('en-GB', { maximumFractionDigits: 1 })}{' '}
+                      {reading.unit}
+                    </span>
+                  ))}
+                </div>
+                <div
+                  className={`measurement-interpretation ${savedMeasurement.interpretation.kind}`}
+                  role="status"
+                >
+                  <h3>{savedMeasurement.interpretation.title}</h3>
+                  <p>{savedMeasurement.interpretation.detail}</p>
+                  {(savedMeasurement.interpretation.whoActs?.length > 0 ||
+                    savedMeasurement.interpretation.alert?.source?.url) && (
+                    <div className="measurement-interpretation-meta">
+                      {savedMeasurement.interpretation.whoActs?.length > 0 && (
+                        <span>
+                          <b>Who should act</b>
+                          {savedMeasurement.interpretation.whoActs.join(', ')}
+                        </span>
+                      )}
+                      {savedMeasurement.interpretation.alert?.source?.url && (
+                        <a
+                          href={savedMeasurement.interpretation.alert.source.url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {savedMeasurement.interpretation.alert.source.title || 'View source'}
+                        </a>
+                      )}
+                    </div>
+                  )}
+                  {savedMeasurement.interpretation.actions?.length > 0 && (
+                    <>
+                      <h4>Suggested next steps</h4>
+                      <ul>
+                        {savedMeasurement.interpretation.actions.map((action) => (
+                          <li key={action}>{action}</li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+                  <small>Illustrative guidance only. A single reading is not a diagnosis.</small>
+                </div>
+                <div className="individual-measurement-actions">
+                  <button className="button subtle" onClick={onClose}>
+                    Done
+                  </button>
+                  <button
+                    className="button primary"
+                    onClick={() => {
+                      setMeasurementValues({});
+                      setSavedMeasurement(null);
+                      setPhase('measurement');
+                    }}
+                  >
+                    Log another measurement
+                  </button>
+                </div>
               </div>
             )}
             {phase === 'readings' && (

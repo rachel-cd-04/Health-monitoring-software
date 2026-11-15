@@ -10,6 +10,8 @@ import { useCrewBootstrap } from '../features/crew/hooks/useCrewBootstrap.js';
 import { crewHistoryKey, fetchCrewHistory } from '../features/crew/hooks/crewQueries.js';
 import { useCreateCheckin } from '../features/checkins/hooks/useCreateCheckin.js';
 import { createCheckInController } from '../features/checkins/controllers/checkInController.js';
+import { createMeasurementController } from '../features/checkins/controllers/measurementController.js';
+import { useCreateMeasurement } from '../features/checkins/hooks/useCreateMeasurement.js';
 import { useAcknowledgeAlert } from '../features/alerts/hooks/useAcknowledgeAlert.js';
 import { useEmergencyController } from '../features/emergency/hooks/useEmergencyController.js';
 import { useReports } from '../features/reports/hooks/useReports.js';
@@ -91,7 +93,9 @@ export function useAppController() {
           crewId: profile?.frontendId,
           day: today,
           slot: 'daily',
-          time: person.checkin_time ? new Date(person.checkin_time).getTime() : Date.parse(`${today}T00:00:00Z`),
+          time: person.checkin_time
+            ? new Date(person.checkin_time).getTime()
+            : Date.parse(`${today}T00:00:00Z`),
           operator: profile?.frontendId,
           source: 'Backend',
           complete: true,
@@ -296,6 +300,7 @@ export function useAppController() {
     requestAccess(crewId, () => setStation({ ...initial, crewId }));
   };
   const checkinMutation = useCreateCheckin();
+  const measurementMutation = useCreateMeasurement();
   const acknowledgeAlertMutation = useAcknowledgeAlert();
   const saveCheckIn = createCheckInController({
     profileFor,
@@ -304,6 +309,14 @@ export function useAppController() {
     notify,
     crew,
     persistCheckIn: checkinMutation.mutateAsync,
+  });
+  const saveMeasurement = createMeasurementController({
+    profileFor,
+    setData,
+    setPrivateApiSignals,
+    notify,
+    crew,
+    persist: measurementMutation.mutateAsync,
   });
   const appendChat = (key, message) =>
     setData((d) => ({
@@ -386,6 +399,7 @@ export function useAppController() {
     restoreReminder,
     riskSheet,
     saveCheckIn,
+    saveMeasurement,
     sendReport,
     setA11y,
     setData,

@@ -348,3 +348,16 @@ export const GUIDES = {
     ],
   },
 };
+
+// Illustrative guide references for single-reading context; these are not clinical thresholds.
+export const POINT_REFERENCE_RANGES = {
+  heart_rate: { min: 60, max: 100, unit: 'bpm', context: 'at rest' },
+  bp_systolic: { min: 90, max: 120, unit: 'mmHg' },
+  bp_diastolic: { min: 60, max: 80, unit: 'mmHg' },
+  blood_sugar: { min: 70, max: 140, unit: 'mg/dL', context: 'depending on when you ate' },
+  temperature: { min: 36.1, max: 37.5, unit: '°C' },
+  sleep_hours: { min: 7, max: 9, unit: 'h', context: 'per night' },
+  mood: { min: 3, max: 5, unit: '/5', context: 'on most days' },
+  fatigue: { min: 1, max: 3, unit: '/5', context: 'on most days' },
+  exercise_min: { min: 60, max: 120, unit: 'min', context: 'per day on station' },
+};

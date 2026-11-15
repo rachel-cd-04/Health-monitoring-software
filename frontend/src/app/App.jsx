@@ -83,6 +83,7 @@ export default function App() {
     restoreReminder,
     riskSheet,
     saveCheckIn,
+    saveMeasurement,
     sendReport,
     setA11y,
     setData,
@@ -301,6 +302,7 @@ export default function App() {
           Modal={Modal}
           onClose={() => setStation(null)}
           onSave={saveCheckIn}
+          onSaveMeasurement={saveMeasurement}
         />
       )}
       {emergency && (
@@ -372,7 +374,8 @@ export default function App() {
           onClose={cancelCheckInPicker}
           onChoose={chooseCheckInProfile}
         />
-      )}      {riskSheet && (
+      )}{' '}
+      {riskSheet && (
         <RiskSheet riskId={riskSheet} Modal={Modal} onClose={() => setRiskSheet(null)} />
       )}
       {settings && (
