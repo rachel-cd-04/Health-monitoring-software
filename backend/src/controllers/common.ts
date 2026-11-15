@@ -183,13 +183,14 @@ export async function evaluateDerivedRules(astronautId: number) {
         }
       }
     } else if (rows.length) {
-      const expressions = condition.split(/\s+or\s+/i);
-      const matches = expressions.map((expression) =>
+      const expressions: string[] = condition.split(/\s+or\s+/i);
+      const matches = expressions.map((expression: string) =>
         expression.match(/^value\s*(<=|>=|<|>)\s*(\d+(?:\.\d+)?)$/i),
       );
       if (
         matches.some(
-          (match) => match && compare(rows[0].value, match[1], Number(match[2])),
+          (match: RegExpMatchArray | null) =>
+            match && compare(rows[0].value, match[1], Number(match[2])),
         )
       ) {
         triggeringPoint = rows[0];
