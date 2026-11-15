@@ -129,8 +129,8 @@ Example indicators named in the statement: **blood pressure, heart rate, blood s
 
 **Goal:** "Astronauts are not doctors" — teach *how* to measure, *why* it matters and *what's normal*.
 
-**One guide card per indicator:**
-1. **How to measure** — 3–5 illustrated steps (e.g. BP: sit, rest 5 min, cuff on upper arm at heart level…)
+**One expandable guide card per indicator, available from both the individual measurement form and daily check-in:**
+1. **How to measure** — 3–5 steps (e.g. BP: sit, rest 5 min, cuff on upper arm at heart level…)
 2. **Why it matters in space** — link to the hazard (e.g. fluid shift in microgravity affects the cardiovascular system)
 3. **Typical range** — with "illustrative, for demo" tag
 4. **If it looks abnormal** — what to do / when to repeat / when to call crew or ground

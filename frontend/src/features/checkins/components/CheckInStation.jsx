@@ -32,7 +32,8 @@ import {
   buildQuickCheckIn,
 } from '../models/checkInFlow.js';
 import MeasurementVisual from '../../health/components/MeasurementVisual.jsx';
-import { GUIDES, INDICATORS, LOG_ITEMS } from '../../health/data/indicators.js';
+import MeasurementGuide from '../../health/components/MeasurementGuide.jsx';
+import { INDICATORS, LOG_ITEMS } from '../../health/data/indicators.js';
 
 const steps = [
   ['setup', 'Get ready'],
@@ -47,6 +48,12 @@ const shortHelp = {
   bp: 'Copy both numbers: systolic first, then diastolic.',
 };
 const icons = { pulse: Heart, glucose: Droplet, temp: Thermometer, bp: Activity };
+const deviceGuideIds = {
+  pulse: 'heart_rate',
+  glucose: 'blood_sugar',
+  temp: 'temperature',
+  bp: 'blood_pressure',
+};
 const fatigueLabels = ['Rested', 'A little tired', 'Tired', 'Very tired', 'Exhausted'];
 const faces = ['Very low', 'Low', 'Okay', 'Good', 'Very good'];
 function Face({ level }) {
@@ -490,16 +497,9 @@ export default function CheckInStation({
                     );
                   })}
                 </div>
-                <details className="individual-guide">
-                  <summary>How do I measure this?</summary>
-                  <ul>
-                    {(
-                      GUIDES[LOG_ITEMS.find((item) => item.id === selectedItem)?.guide]?.steps || []
-                    ).map((step) => (
-                      <li key={step}>{step}</li>
-                    ))}
-                  </ul>
-                </details>
+                <MeasurementGuide
+                  guideId={LOG_ITEMS.find((item) => item.id === selectedItem)?.guide}
+                />
                 {issue && (
                   <p className="error-text" role="alert">
                     {issue.message}
@@ -666,16 +666,11 @@ export default function CheckInStation({
                           </div>
                         </div>
                         <p className="device-short-help">{shortHelp[key]}</p>
-                        <details>
-                          <summary>Show placement and reading tips</summary>
-                          <ul>
-                            {m.guide.map((t) => (
-                              <li key={t}>
-                                {t.replace(/^I confirmed the person and /, '').replace(/^I /, '')}
-                              </li>
-                            ))}
-                          </ul>
-                        </details>
+                        <MeasurementGuide
+                          guideId={deviceGuideIds[key]}
+                          supportingSteps={m.guide}
+                          className="device-measurement-guide"
+                        />
                       </section>
                     );
                   })}
@@ -769,6 +764,7 @@ export default function CheckInStation({
                     </div>
                   </div>
                 </section>
+                <MeasurementGuide guideId="sleep" className="wellbeing-measurement-guide" />
                 <section className="quick-mood">
                   <h3>How is your mood right now?</h3>
                   <div className="wellbeing-faces" role="group" aria-label="Mood scale">
@@ -791,6 +787,7 @@ export default function CheckInStation({
                       </button>
                     ))}
                   </div>
+                  <MeasurementGuide guideId="mood" className="wellbeing-measurement-guide" />
                 </section>
                 <section className="quick-mood quick-fatigue">
                   <h3>How tired do you feel?</h3>
@@ -818,6 +815,7 @@ export default function CheckInStation({
                       </button>
                     ))}
                   </div>
+                  <MeasurementGuide guideId="fatigue" className="wellbeing-measurement-guide" />
                 </section>
                 <section className="quick-exercise">
                   <span className="exercise-icon">
@@ -869,6 +867,7 @@ export default function CheckInStation({
                     </button>
                   </div>
                 </section>
+                <MeasurementGuide guideId="exercise" className="wellbeing-measurement-guide" />
                 {issue && (
                   <p className="error-text" role="alert">
                     {issue.message}
