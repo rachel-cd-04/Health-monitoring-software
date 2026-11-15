@@ -6,10 +6,9 @@ import {
   CheckCheck,
   WifiOff,
   ExternalLink,
-  Download,
   ArrowUpRight,
 } from 'lucide-react';
-import { officialResources, risks, hazards, ACCESSED } from '../../health/models/risks.js';
+import { officialResources, risks, hazards } from '../../health/models/risks.js';
 import { RULESET_VERSION } from '../../alerts/models/rules.js';
 import { LockedPanel } from '../../auth/components/AccessUI.jsx';
 import {
@@ -18,7 +17,6 @@ import {
   stamp,
   latest,
   valueLabel,
-  downloadFile,
   slotNames,
 } from '../../crew/models/crewModel.js';
 import { apiConfigured } from '../../../shared/api/apiClient.js';
@@ -224,7 +222,6 @@ export function Sources({ onRisk }) {
         <section className="library-section">
           <div className="library-heading">
             <h2>Backend source registry</h2>
-            <span>Traceability records used by backend rules and alerts</span>
           </div>
           {sourcesQuery.isPending ? (
             <p className="muted">Loading registered sources…</p>
@@ -239,7 +236,7 @@ export function Sources({ onRisk }) {
                   <div>
                     <h4>{source.title}</h4>
                     <p>
-                      {source.agency} · {source.doc_type} · accessed {source.accessed_on}
+                      {source.agency} · {source.doc_type}
                     </p>
                   </div>
                   <ExternalLink size={17} />
@@ -252,7 +249,7 @@ export function Sources({ onRisk }) {
       <section className="library-section">
         <div className="library-heading">
           <h2>Official challenge resources</h2>
-          <span>NASA Space Apps 2026 · Resources tab · accessed {ACCESSED}</span>
+          <span>NASA Space Apps 2026 · Resources tab</span>
         </div>
         <div className="resource-grid">
           {officialResources.map((r, i) => (
@@ -366,7 +363,7 @@ function Toggle({ label, hint, checked, onChange }) {
   );
 }
 
-export function SettingsPanel({ data, onClose, Modal, a11y, setA11y }) {
+export function SettingsPanel({ onClose, Modal, a11y, setA11y }) {
   const set = (k, v) => setA11y((p) => ({ ...p, [k]: v }));
   return (
     <Modal title="Settings" onClose={onClose} wide>
@@ -425,23 +422,6 @@ export function SettingsPanel({ data, onClose, Modal, a11y, setA11y }) {
             Restore defaults
           </button>
         </section>
-        <div className="settings-col">
-          <section className="settings-card">
-            <h3>Data</h3>
-            <p className="settings-hint">
-              Health records are saved by the connected mission service.
-            </p>
-            <div className="settings-actions-v3">
-              <button
-                className="button subtle"
-                onClick={() => downloadFile('SOMA-session.json', JSON.stringify(data, null, 2))}
-              >
-                <Download size={16} />
-                Export session
-              </button>
-            </div>
-          </section>
-        </div>
       </div>
     </Modal>
   );

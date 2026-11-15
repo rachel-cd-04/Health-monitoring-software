@@ -41,6 +41,21 @@ import '../dark-legacy.css';
 import '../shell.css';
 import '../emergency.css';
 
+function NotFoundPage() {
+  return (
+    <main className="not-found-page">
+      <div className="not-found-card">
+        <span className="not-found-code">404</span>
+        <h1>Page not found</h1>
+        <p>The requested SOMA page does not exist.</p>
+        <a className="button primary" href="/">
+          Back to home
+        </a>
+      </div>
+    </main>
+  );
+}
+
 export default function App() {
   const {
     access,
@@ -117,9 +132,10 @@ export default function App() {
     notif,
     snoozeReminder,
   } = useAppController();
+  if (window.location.pathname !== '/') return <NotFoundPage />;
   if (apiStatus !== 'connected') {
     const title =
-      apiStatus === 'checking' ? 'Connecting to the health service' : 'Health service unavailable';
+      apiStatus === 'checking' ? 'Connecting to SOMA' : 'Health service unavailable';
     const message =
       apiStatus === 'missing'
         ? 'Set VITE_API_URL in the frontend environment, then reload the application.'
@@ -127,14 +143,21 @@ export default function App() {
           ? 'Check the backend connection and reload the application.'
           : 'Loading crew and mission data…';
     return (
-      <main className="api-required" role="status">
-        <h1>{title}</h1>
-        <p>{message}</p>
-        {apiStatus !== 'checking' && (
-          <button className="button" onClick={() => window.location.reload()}>
-            Reload
-          </button>
-        )}
+      <main className="api-required" role="status" aria-live="polite">
+        <div className="api-card">
+          <div className="api-brand" aria-hidden="true">
+            <Activity size={26} />
+          </div>
+          <span className="api-kicker">SOMA · HEALTH MONITORING</span>
+          <h1>{title}</h1>
+          <p>{message}</p>
+          {apiStatus === 'checking' && <span className="api-spinner" aria-hidden="true" />}
+          {apiStatus !== 'checking' && (
+            <button className="button" onClick={() => window.location.reload()}>
+              Reload
+            </button>
+          )}
+        </div>
       </main>
     );
   }
@@ -401,7 +424,6 @@ export default function App() {
         <SettingsPanel
           a11y={a11y}
           setA11y={setA11y}
-          data={data}
           onClose={() => setSettings(false)}
           Modal={Modal}
         />
