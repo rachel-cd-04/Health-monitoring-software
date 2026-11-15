@@ -767,6 +767,120 @@
 .device-reading-card li {
   padding: 3px 0;
 }
+
+@media (min-width: 700px) and (max-height: 850px) {
+  .modal.checkin-modal {
+    max-height: calc(100vh - 20px);
+  }
+  .checkin-modal .quick-header {
+    padding-bottom: 10px;
+  }
+  .checkin-modal .quick-stepper {
+    margin: 12px 0 15px;
+  }
+  .checkin-modal .quick-heading {
+    margin-bottom: 12px;
+  }
+  .checkin-modal .quick-heading h2 {
+    font-size: 27px;
+    margin-bottom: 5px;
+  }
+  .checkin-modal .quick-heading p {
+    line-height: 1.4;
+  }
+  .checkin-modal .device-readings-grid {
+    gap: 10px;
+  }
+  .checkin-modal .device-reading-card {
+    padding: 10px 12px;
+  }
+  .checkin-modal .device-reading-content {
+    min-height: 78px;
+    gap: 10px;
+  }
+  .checkin-modal .measurement-visual {
+    width: 100px;
+    height: 72px;
+    flex-basis: 100px;
+  }
+  .checkin-modal .quick-value-input input,
+  .checkin-modal .quick-pressure-inputs input {
+    height: 40px;
+  }
+  .checkin-modal .device-short-help {
+    line-height: 1.4;
+    margin: 2px 0 5px;
+  }
+  .checkin-modal .quick-checkin .button.full {
+    margin-top: 10px;
+    min-height: 40px;
+  }
+  .checkin-modal .quick-sleep {
+    gap: 16px;
+    padding: 12px 16px;
+    margin: 12px 0 15px;
+  }
+  .checkin-modal .quick-sleep > .measurement-visual {
+    width: 100px;
+    height: 75px;
+    flex-basis: 100px;
+  }
+  .checkin-modal .quick-sleep h3,
+  .checkin-modal .quick-mood h3 {
+    font-size: 16px;
+    margin-bottom: 5px;
+  }
+  .checkin-modal .quick-sleep p {
+    line-height: 1.4;
+  }
+  .checkin-modal .sleep-number {
+    margin: 8px 0 6px;
+  }
+  .checkin-modal .sleep-number input {
+    height: 40px;
+  }
+  .checkin-modal .quick-mood {
+    padding: 2px 0 7px;
+  }
+  .checkin-modal .wellbeing-faces {
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .checkin-modal .wellbeing-faces button {
+    padding: 8px 4px;
+  }
+  .checkin-modal .wellbeing-faces svg {
+    width: 42px;
+    height: 42px;
+  }
+  .checkin-modal .fatigue-scale {
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .checkin-modal .fatigue-scale button {
+    gap: 4px;
+    padding: 8px 4px;
+  }
+  .checkin-modal .fatigue-bar {
+    height: 24px;
+  }
+  .checkin-modal .quick-exercise {
+    gap: 10px 14px;
+    margin: 10px 0 14px;
+    padding: 10px 14px;
+  }
+  .checkin-modal .quick-exercise > div:not(.sleep-number) {
+    min-width: 150px;
+  }
+  .checkin-modal .quick-exercise h3 {
+    font-size: 15px;
+  }
+  .checkin-modal .exercise-icon {
+    width: 36px;
+    height: 36px;
+  }
+}
+
 .device-reading-card input[aria-invalid='true'] {
   border-color: #c67d86;
   background: #fff4f5;

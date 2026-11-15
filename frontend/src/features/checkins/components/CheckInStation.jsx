@@ -240,7 +240,12 @@ export default function CheckInStation({
     else onClose();
   };
   return (
-    <Modal title={`Health entry · ${person.name}`} onClose={close} wide>
+    <Modal
+      title={`Health entry · ${person.name}`}
+      onClose={close}
+      wide
+      className="checkin-modal"
+    >
       <div className="quick-checkin">
         <header className="quick-header">
           <div className="quick-person">
@@ -371,7 +376,7 @@ export default function CheckInStation({
                     disabled={!ready}
                     onClick={() => next('readings')}
                   >
-                    Ready — enter readings
+                    Continue
                     <ArrowRight size={17} />
                   </button>
                 )}
@@ -690,7 +695,7 @@ export default function CheckInStation({
                   </p>
                 )}
                 <button className="button primary full" disabled={!quality}>
-                  Use these readings
+                  Continue
                   <ArrowRight size={17} />
                 </button>
               </form>
