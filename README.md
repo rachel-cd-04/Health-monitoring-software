@@ -93,7 +93,7 @@ Review due check-ins, routine tasks and recent resolved alerts from the notifica
 </p>
 
 ### Emergency mode
-Follow a step-by-step guide for emergency scenarios and record a simulated onboard report. SOMA does not contact a real medical team.
+Follow a step-by-step guide for emergency scenarios and record a simulated onboard report. SOMA does not contact a real medical team. The guide also includes an **Ask SOMA** chat with the AI assistant, to ask questions about the step on screen.
 
 <p align="center">
   <img src="docs/screenshots/emergency.png" alt="Emergency mode" width="80%" />
@@ -122,6 +122,8 @@ Review crew-wide status. Commander access can open additional crew health and al
 
 ### Assistant and reference library
 Ask questions about saved records and health topics; review the NASA/CSA references used by the prototype. The hosted AI provider is optional and the assistant does not diagnose.
+
+**Voice:** ask by microphone (English) and press "Listen" to hear any answer read aloud, also in the Emergency chat. It uses the browser's built-in speech features, so it appears only where supported, and the browser's speech service may process the audio.
 
 <p align="center">
   <img src="docs/screenshots/IA_chatbot.png" alt="SOMA assistant chat" width="49%" />
