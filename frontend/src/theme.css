@@ -1330,65 +1330,6 @@ html.a11y-reduce-motion .mic-button.listening::after {
   }
 }
 
-/* ---------- Spoken question waiting to be sent (shared/components/VoicePending.jsx) ---------- */
-.voice-pending {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 8px 16px 0;
-  padding: 7px 8px 9px 12px;
-  border-radius: 12px;
-  background: var(--teal-soft);
-  color: var(--teal-ink);
-  font-size: 13px;
-  font-weight: 600;
-  overflow: hidden;
-}
-.em-chat .voice-pending {
-  margin: 10px 14px 0;
-}
-.voice-pending-text {
-  margin-right: auto;
-}
-.voice-pending button {
-  height: 28px;
-  padding: 0 10px;
-  border-radius: 8px;
-  color: var(--teal-ink);
-  font-size: 12.5px;
-  font-weight: 600;
-  background: transparent;
-}
-.voice-pending button:hover {
-  background: color-mix(in srgb, var(--teal) 14%, transparent);
-}
-.voice-pending button.primary {
-  background: var(--teal);
-  color: #fff;
-}
-.voice-pending button.primary:hover {
-  background: var(--teal-ink);
-}
-html.theme-dark .voice-pending button.primary:hover {
-  background: color-mix(in srgb, var(--teal) 85%, #fff);
-}
-/* Drains from full to empty while the countdown runs. */
-.voice-pending-bar {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  height: 3px;
-  width: 100%;
-  background: var(--teal);
-  transform-origin: left;
-  animation: voice-countdown linear forwards;
-}
-@keyframes voice-countdown {
-  to {
-    transform: scaleX(0);
-  }
-}
 @media (prefers-reduced-motion: reduce) {
   .speak-bars i {
     animation: none;

@@ -232,7 +232,9 @@ export async function askAssistant({
         text: body.answer,
         sources: body.sources || [],
         caution: body.caution || CAUTION,
-        dataUsed: body.data_used || [],
+        // `data_used` lists internal tool names (e.g. get_crew_member_health_summary): not for the crew.
+        // The answer's references are shown from `sources` instead.
+        dataUsed: [],
         ruleIds: [],
         engine: 'service',
         scope: body.scope,

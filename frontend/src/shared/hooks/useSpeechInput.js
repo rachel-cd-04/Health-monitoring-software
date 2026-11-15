@@ -30,46 +30,36 @@ function errorMessage(code) {
   }
 }
 
-export const AUTO_SEND_MS = 1000;
+// The browser's own end-of-speech detection stops at the first short pause (often mid-sentence). We
+// listen continuously instead and stop ourselves after this much silence.
+export const SILENCE_MS = 1250;
+// Give up if nothing at all is said within this time after tapping the microphone.
+export const NO_SPEECH_MS = 8000;
 
 /**
  * Speak a message instead of typing it.
- * While listening, `transcript` holds the live words so the input can show them. When the person
- * stops talking, the text waits in `pending` for `sendDelay` ms (time to read, edit or cancel it)
- * and then `onResult(text)` runs. `confirm()` sends it at once, `discard()` drops it and returns it.
- * `stop({ now: true })` ends listening and sends straight away (the Send button).
+ * While listening, `transcript` holds the live words so the input can show them. Listening ends after
+ * `silenceMs` without new words (or when `stop()` is called) and `onResult(text)` runs straight away.
  */
-export function useSpeechInput({ onResult, lang = 'en-US', sendDelay = AUTO_SEND_MS } = {}) {
+export function useSpeechInput({ onResult, lang = 'en-US', silenceMs = SILENCE_MS } = {}) {
   const [listening, setListening] = useState(false),
     [transcript, setTranscript] = useState(''),
-    [pending, setPending] = useState(''),
     [error, setError] = useState('');
   const rec = useRef(null),
     heard = useRef({ final: '', all: '' }),
-    sendNow = useRef(false),
-    pendingText = useRef(''),
-    pendingTimer = useRef(),
+    silenceTimer = useRef(),
     resultRef = useRef(onResult);
   resultRef.current = onResult;
 
-  const clearPending = useCallback(() => {
-    clearTimeout(pendingTimer.current);
-    const text = pendingText.current;
-    pendingText.current = '';
-    setPending('');
-    return text;
+  /** Stop listening and send what was heard so far. */
+  const stop = useCallback(() => {
+    clearTimeout(silenceTimer.current);
+    rec.current?.stop();
   }, []);
-  /** Send the waiting transcript now. */
-  const confirm = useCallback(() => {
-    const text = clearPending();
-    if (text) resultRef.current?.(text);
-  }, [clearPending]);
-  /** Drop the waiting transcript (returns it, e.g. to edit it as typed text). */
-  const discard = clearPending;
 
-  /** Stop listening and discard what was heard (and anything waiting to be sent). */
+  /** Stop listening and discard what was heard. */
   const cancel = useCallback(() => {
-    clearPending();
+    clearTimeout(silenceTimer.current);
     const r = rec.current;
     rec.current = null;
     if (r) {
@@ -78,13 +68,6 @@ export function useSpeechInput({ onResult, lang = 'en-US', sendDelay = AUTO_SEND
     }
     setListening(false);
     setTranscript('');
-  }, [clearPending]);
-
-  /** Stop listening. What was heard waits `sendDelay` ms, or is sent at once with `{ now: true }`. */
-  const stop = useCallback(({ now = false } = {}) => {
-    if (!rec.current) return;
-    sendNow.current = now;
-    rec.current.stop();
   }, []);
 
   const start = useCallback(() => {
@@ -92,13 +75,17 @@ export function useSpeechInput({ onResult, lang = 'en-US', sendDelay = AUTO_SEND
     const r = new Recognition();
     r.lang = lang;
     r.interimResults = true; // live words while speaking
-    r.continuous = false; // one question per tap; ends after a natural pause
+    r.continuous = true; // keep listening through short pauses; the silence timer ends it
     r.maxAlternatives = 1;
-    clearPending();
     heard.current = { final: '', all: '' };
-    sendNow.current = false;
     setError('');
     setTranscript('');
+
+    // Nothing said at all: stop and say so.
+    silenceTimer.current = setTimeout(() => {
+      setError(errorMessage('no-speech'));
+      rec.current?.stop();
+    }, NO_SPEECH_MS);
 
     r.onresult = (e) => {
       let final = '',
@@ -109,24 +96,21 @@ export function useSpeechInput({ onResult, lang = 'en-US', sendDelay = AUTO_SEND
       }
       heard.current = { final: final.trim(), all: (final + partial).trim() };
       setTranscript(heard.current.all);
+      // Every new word restarts the countdown; it only runs out after a real pause.
+      clearTimeout(silenceTimer.current);
+      silenceTimer.current = setTimeout(() => rec.current?.stop(), silenceMs);
     };
     r.onerror = (e) => {
       if (e.error !== 'aborted') setError(errorMessage(e.error));
     };
     r.onend = () => {
+      clearTimeout(silenceTimer.current);
       rec.current = null;
       setListening(false);
       setTranscript('');
       // If stopped mid-word some browsers never finalise: fall back to the last words shown.
       const text = heard.current.final || heard.current.all;
-      if (!text) return;
-      if (sendNow.current || sendDelay <= 0) {
-        resultRef.current?.(text);
-        return;
-      }
-      pendingText.current = text;
-      setPending(text);
-      pendingTimer.current = setTimeout(confirm, sendDelay);
+      if (text) resultRef.current?.(text);
     };
 
     rec.current = r;
@@ -134,10 +118,11 @@ export function useSpeechInput({ onResult, lang = 'en-US', sendDelay = AUTO_SEND
       r.start();
       setListening(true);
     } catch {
+      clearTimeout(silenceTimer.current);
       rec.current = null;
       setError(errorMessage());
     }
-  }, [lang, sendDelay, clearPending, confirm]);
+  }, [lang, silenceMs]);
 
   const toggle = useCallback(() => (rec.current ? stop() : start()), [start, stop]);
 
@@ -155,14 +140,10 @@ export function useSpeechInput({ onResult, lang = 'en-US', sendDelay = AUTO_SEND
     supported: speechSupported,
     listening,
     transcript,
-    pending,
-    sendDelay,
     error,
     start,
     stop,
     cancel,
     toggle,
-    confirm,
-    discard,
   };
 }

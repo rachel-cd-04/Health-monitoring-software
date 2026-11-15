@@ -19,7 +19,6 @@ import MicButton from '../../../shared/components/MicButton.jsx';
 import { useSpeechInput } from '../../../shared/hooks/useSpeechInput.js';
 import { useSpeechOutput } from '../../../shared/hooks/useSpeechOutput.js';
 import SpeakButton from '../../../shared/components/SpeakButton.jsx';
-import VoicePending from '../../../shared/components/VoicePending.jsx';
 
 export function Sources({ items, onRisk }) {
   const list = (items || []).map((s) => resolveSource(s, officialResources)).filter(Boolean);
@@ -145,8 +144,7 @@ export default function CrewAssistant({
       setBusy(false);
     }, wait);
   };
-  // Voice input: the spoken question is sent 1 s after the person stops talking (time to edit or
-  // cancel it), and its answer is read aloud.
+  // Voice input: the spoken question is sent when the person stops talking, and its answer is read aloud.
   const voice = useSpeechInput({ onResult: (text) => send(text, { viaVoice: true }) });
   const toggleVoice = () => {
     if (!voice.listening) {
@@ -154,10 +152,6 @@ export default function CrewAssistant({
       onStatus?.('listening');
     }
     voice.toggle();
-  };
-  const editVoiceText = (text) => {
-    setInput(text);
-    field.current?.focus();
   };
   useEffect(() => {
     if (paused) voice.cancel(); // hidden (e.g. minimised): never keep the microphone on
@@ -289,13 +283,11 @@ export default function CrewAssistant({
           {voice.error}
         </p>
       )}
-      <VoicePending voice={voice} onEdit={editVoiceText} />
       <form
         className={'chat-compose' + (voice.listening ? ' listening' : '')}
         onSubmit={(e) => {
           e.preventDefault();
-          if (voice.listening) voice.stop({ now: true });
-          else if (voice.pending) voice.confirm();
+          if (voice.listening) voice.stop();
           else send(input);
         }}
       >
@@ -305,11 +297,8 @@ export default function CrewAssistant({
         <input
           id={'chat-' + key}
           ref={field}
-          value={voice.listening ? voice.transcript : voice.pending || input}
-          onChange={(e) => {
-            if (voice.pending) voice.discard(); // typing turns the spoken text into a typed draft
-            setInput(e.target.value);
-          }}
+          value={voice.listening ? voice.transcript : input}
+          onChange={(e) => setInput(e.target.value)}
           onFocus={() => onStatus?.('listening')}
           onBlur={() => !voice.listening && onStatus?.('idle')}
           maxLength={1500}
@@ -328,7 +317,7 @@ export default function CrewAssistant({
         <MicButton voice={{ ...voice, toggle: toggleVoice }} disabled={busy} />
         <button
           aria-label="Send message"
-          disabled={busy || (!voice.listening && !voice.pending && !input.trim())}
+          disabled={busy || (!voice.listening && !input.trim())}
         >
           <Send size={17} />
         </button>
