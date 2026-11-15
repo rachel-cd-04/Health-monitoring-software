@@ -1183,3 +1183,217 @@ body {
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+
+/* ---------- Voice input (shared/components/MicButton.jsx) ---------- */
+.chat-compose button.mic-button,
+.em-chat-compose button.mic-button {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  background: transparent;
+  color: var(--ink-2);
+  border: 1.5px solid var(--line);
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+}
+.em-chat-compose button.mic-button {
+  border-color: transparent;
+}
+.chat-compose button.mic-button:hover:not(:disabled),
+.em-chat-compose button.mic-button:hover:not(:disabled) {
+  background: var(--teal-soft);
+  border-color: transparent;
+  color: var(--teal-ink);
+}
+.chat-compose button.mic-button.listening,
+.em-chat-compose button.mic-button.listening,
+.chat-compose button.mic-button.listening:hover:not(:disabled),
+.em-chat-compose button.mic-button.listening:hover:not(:disabled) {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fff;
+}
+/* Expanding ring while the microphone is on. */
+.mic-button.listening::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--red) 45%, transparent);
+  animation: mic-ring 1.4s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes mic-ring {
+  to {
+    box-shadow: 0 0 0 10px color-mix(in srgb, var(--red) 0%, transparent);
+  }
+}
+.chat-compose.listening input {
+  border-color: var(--red) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--red) 14%, transparent) !important;
+  color: var(--ink);
+  font-style: italic;
+}
+.em-chat-compose.listening,
+.em-chat-compose.listening:focus-within {
+  border-color: var(--red);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--red) 14%, transparent);
+}
+.em-chat-compose.listening textarea {
+  font-style: italic;
+}
+.voice-error {
+  margin: 8px 16px 0;
+  padding: 7px 11px;
+  border-radius: 10px;
+  background: var(--review-soft);
+  color: var(--review);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.em-voice-error {
+  margin: 10px 14px 0;
+}
+html.theme-dark .voice-error {
+  background: color-mix(in srgb, var(--red) 18%, var(--surface));
+  color: #ffb4bb;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mic-button.listening::after {
+    animation: none;
+  }
+}
+html.a11y-reduce-motion .mic-button.listening::after {
+  animation: none;
+}
+
+/* ---------- Read aloud (shared/components/SpeakButton.jsx) ---------- */
+.chat-message > span:has(.speak-button) {
+  justify-content: flex-start;
+  gap: 8px;
+}
+.speak-button {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 28px;
+  height: 24px;
+  padding: 0 7px;
+  border-radius: 999px;
+  color: var(--ink-3);
+  background: transparent;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.speak-button:hover,
+.speak-button:focus-visible {
+  background: var(--teal-soft);
+  color: var(--teal-ink);
+}
+.speak-button.speaking {
+  background: var(--teal);
+  color: #fff;
+}
+.speak-bars {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 10px;
+}
+.speak-bars i {
+  width: 2px;
+  height: 100%;
+  border-radius: 1px;
+  background: currentColor;
+  transform-origin: bottom;
+  animation: speak-bar 0.9s ease-in-out infinite;
+}
+.speak-bars i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.speak-bars i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes speak-bar {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+/* ---------- Spoken question waiting to be sent (shared/components/VoicePending.jsx) ---------- */
+.voice-pending {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 16px 0;
+  padding: 7px 8px 9px 12px;
+  border-radius: 12px;
+  background: var(--teal-soft);
+  color: var(--teal-ink);
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+}
+.em-chat .voice-pending {
+  margin: 10px 14px 0;
+}
+.voice-pending-text {
+  margin-right: auto;
+}
+.voice-pending button {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: var(--teal-ink);
+  font-size: 12.5px;
+  font-weight: 600;
+  background: transparent;
+}
+.voice-pending button:hover {
+  background: color-mix(in srgb, var(--teal) 14%, transparent);
+}
+.voice-pending button.primary {
+  background: var(--teal);
+  color: #fff;
+}
+.voice-pending button.primary:hover {
+  background: var(--teal-ink);
+}
+html.theme-dark .voice-pending button.primary:hover {
+  background: color-mix(in srgb, var(--teal) 85%, #fff);
+}
+/* Drains from full to empty while the countdown runs. */
+.voice-pending-bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 100%;
+  background: var(--teal);
+  transform-origin: left;
+  animation: voice-countdown linear forwards;
+}
+@keyframes voice-countdown {
+  to {
+    transform: scaleX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .speak-bars i {
+    animation: none;
+  }
+}
+html.a11y-reduce-motion .speak-bars i {
+  animation: none;
+}

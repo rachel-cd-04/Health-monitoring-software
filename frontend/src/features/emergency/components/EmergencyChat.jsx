@@ -6,6 +6,11 @@ import { Sources } from '../../assistant/components/CrewAssistant.jsx';
 import { apiConfigured } from '../../../shared/api/apiClient.js';
 import { localId, timeLabel } from '../../crew/models/crewModel.js';
 import Markdown from '../../../shared/components/Markdown.jsx';
+import MicButton from '../../../shared/components/MicButton.jsx';
+import { useSpeechInput } from '../../../shared/hooks/useSpeechInput.js';
+import { useSpeechOutput } from '../../../shared/hooks/useSpeechOutput.js';
+import SpeakButton from '../../../shared/components/SpeakButton.jsx';
+import VoicePending from '../../../shared/components/VoicePending.jsx';
 
 /**
  * "Ask SOMA" panel inside the emergency guide. Answers questions about the step on screen; the guide
@@ -28,16 +33,21 @@ export default function EmergencyChat({ threadKey, messages, onAppend, context, 
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages.length, busy]);
 
-  const send = async (raw) => {
+  const tts = useSpeechOutput();
+  // `viaVoice`: the question was spoken, so the answer is read aloud too (voice mode).
+  const send = async (raw, { viaVoice = false } = {}) => {
     const message = raw.trim();
     if (!message || busy) return;
+    tts.stop();
     setInput('');
     onAppend(threadKey, { id: localId(), role: 'user', text: message, time: Date.now() });
     setBusy(true);
     const reply = await askEmergencyAssistant({ message, context, history: messages });
     if (!alive.current) return;
+    const replyId = localId();
+    if (viaVoice) tts.speak(replyId, reply.text);
     onAppend(threadKey, {
-      id: localId(),
+      id: replyId,
       role: 'assistant',
       text: reply.text,
       sources: reply.sources,
@@ -46,6 +56,18 @@ export default function EmergencyChat({ threadKey, messages, onAppend, context, 
       time: Date.now(),
     });
     setBusy(false);
+    field.current?.focus();
+  };
+
+  // Hands are often busy during an emergency: a spoken question is sent 1 s after the person stops
+  // talking (time to edit or cancel it), and the answer is read aloud.
+  const voice = useSpeechInput({ onResult: (text) => send(text, { viaVoice: true }) });
+  const toggleVoice = () => {
+    if (!voice.listening) tts.stop(); // don't let the microphone hear SOMA talking
+    voice.toggle();
+  };
+  const editVoiceText = (text) => {
+    setInput(text);
     field.current?.focus();
   };
 
@@ -104,6 +126,7 @@ export default function EmergencyChat({ threadKey, messages, onAppend, context, 
                   Offline
                 </em>
               )}
+              {m.role === 'assistant' && <SpeakButton tts={tts} id={m.id} text={m.text} />}
             </header>
             <div className="em-msg-body">
               {m.role === 'user' ? <p>{m.text}</p> : <Markdown text={m.text} />}
@@ -130,11 +153,19 @@ export default function EmergencyChat({ threadKey, messages, onAppend, context, 
         ))}
       </div>
 
+      {voice.error && (
+        <p className="voice-error em-voice-error" role="status">
+          {voice.error}
+        </p>
+      )}
+      <VoicePending voice={voice} onEdit={editVoiceText} />
       <form
-        className="em-chat-compose"
+        className={'em-chat-compose' + (voice.listening ? ' listening' : '')}
         onSubmit={(e) => {
           e.preventDefault();
-          send(input);
+          if (voice.listening) voice.stop({ now: true });
+          else if (voice.pending) voice.confirm();
+          else send(input);
         }}
       >
         <label className="sr-only" htmlFor={'em-chat-' + threadKey}>
@@ -144,18 +175,29 @@ export default function EmergencyChat({ threadKey, messages, onAppend, context, 
           id={'em-chat-' + threadKey}
           ref={field}
           rows={1}
-          value={input}
+          value={voice.listening ? voice.transcript : voice.pending || input}
+          readOnly={voice.listening}
           maxLength={1500}
-          placeholder="Ask about this step…"
-          onChange={(e) => setInput(e.target.value)}
+          placeholder={voice.listening ? 'Listening… speak now' : 'Ask about this step…'}
+          onChange={(e) => {
+            if (voice.pending) voice.discard(); // typing turns the spoken text into a typed draft
+            setInput(e.target.value);
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
-              send(input);
+              if (voice.listening) voice.stop({ now: true });
+              else if (voice.pending) voice.confirm();
+              else send(input);
             }
           }}
         />
-        <button type="submit" aria-label="Send question" disabled={busy || !input.trim()}>
+        <MicButton voice={{ ...voice, toggle: toggleVoice }} disabled={busy} className="em-mic" />
+        <button
+          type="submit"
+          aria-label="Send question"
+          disabled={busy || (!voice.listening && !voice.pending && !input.trim())}
+        >
           <ArrowUp size={19} />
         </button>
       </form>

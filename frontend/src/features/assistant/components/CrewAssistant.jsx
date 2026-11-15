@@ -15,6 +15,11 @@ import { useAssistant } from '../hooks/useAssistant.js';
 import { officialResources } from '../../health/models/risks.js';
 import { timeLabel, localId } from '../../crew/models/crewModel.js';
 import Markdown from '../../../shared/components/Markdown.jsx';
+import MicButton from '../../../shared/components/MicButton.jsx';
+import { useSpeechInput } from '../../../shared/hooks/useSpeechInput.js';
+import { useSpeechOutput } from '../../../shared/hooks/useSpeechOutput.js';
+import SpeakButton from '../../../shared/components/SpeakButton.jsx';
+import VoicePending from '../../../shared/components/VoicePending.jsx';
 
 export function Sources({ items, onRisk }) {
   const list = (items || []).map((s) => resolveSource(s, officialResources)).filter(Boolean);
@@ -52,12 +57,15 @@ export default function CrewAssistant({
   onRisk,
   onStatus,
   compact = false,
+  paused = false,
 }) {
   const [input, setInput] = useState(''),
     [busy, setBusy] = useState(false);
   const timer = useRef(),
     end = useRef(),
+    field = useRef(),
     alive = useRef(true);
+  const tts = useSpeechOutput();
   const { askAssistant } = useAssistant();
   const key = alert ? 'emergency-' + alert.id : person.id;
   const messages = data.chatThreads[key] || [];
@@ -75,9 +83,11 @@ export default function CrewAssistant({
       block: 'nearest',
     });
   }, [messages.length, busy]);
-  const send = async (text) => {
+  // `viaVoice`: the question was spoken, so the answer is read aloud too (voice mode).
+  const send = async (text, { viaVoice = false } = {}) => {
     if (!text.trim() || busy) return;
     const message = text.trim();
+    tts.stop();
     setInput('');
     onStatus?.('thinking');
     onAppend(key, { id: localId(), role: 'user', text: message, time: Date.now() });
@@ -86,8 +96,10 @@ export default function CrewAssistant({
       timer.current = setTimeout(() => {
         const reply = emergencyReply(message, alert.assessment);
         if (reply.assessment) onAssessment?.(alert.id, reply.assessment);
+        const replyId = localId();
+        if (viaVoice) tts.speak(replyId, reply.text);
         onAppend(key, {
-          id: localId(),
+          id: replyId,
           role: 'assistant',
           text: reply.text,
           engine: 'guided',
@@ -114,8 +126,10 @@ export default function CrewAssistant({
     timer.current = setTimeout(() => {
       if (!alive.current) return;
       onStatus?.(reply.action === 'emergency' ? 'concerned' : 'happy');
+      const replyId = localId();
+      if (viaVoice) tts.speak(replyId, reply.text);
       onAppend(key, {
-        id: localId(),
+        id: replyId,
         role: 'assistant',
         text: reply.text,
         action: reply.action,
@@ -131,6 +145,30 @@ export default function CrewAssistant({
       setBusy(false);
     }, wait);
   };
+  // Voice input: the spoken question is sent 1 s after the person stops talking (time to edit or
+  // cancel it), and its answer is read aloud.
+  const voice = useSpeechInput({ onResult: (text) => send(text, { viaVoice: true }) });
+  const toggleVoice = () => {
+    if (!voice.listening) {
+      tts.stop(); // don't let the microphone hear SOMA talking
+      onStatus?.('listening');
+    }
+    voice.toggle();
+  };
+  const editVoiceText = (text) => {
+    setInput(text);
+    field.current?.focus();
+  };
+  useEffect(() => {
+    if (paused) voice.cancel(); // hidden (e.g. minimised): never keep the microphone on
+  }, [paused, voice.cancel]);
+  const wasListening = useRef(false);
+  useEffect(() => {
+    // Back to idle if listening ended without a question (send() switches to 'thinking' otherwise).
+    if (wasListening.current && !voice.listening && !busy) onStatus?.('idle');
+    wasListening.current = voice.listening;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voice.listening]);
   const prompts = alert
     ? emergencyPrompts(alert.assessment)
     : person.general
@@ -193,6 +231,7 @@ export default function CrewAssistant({
               {m.role === 'assistant' && m.unavailable && (
                 <em className="fallback-tag">Mission assistant unavailable</em>
               )}
+              {m.role === 'assistant' && <SpeakButton tts={tts} id={m.id} text={m.text} />}
             </span>
             {m.role === 'assistant' ? <Markdown text={m.text} /> : <p>{m.text}</p>}
             {m.dataUsed?.length > 0 && (
@@ -245,11 +284,19 @@ export default function CrewAssistant({
           </button>
         ))}
       </div>
+      {voice.error && (
+        <p className="voice-error" role="status">
+          {voice.error}
+        </p>
+      )}
+      <VoicePending voice={voice} onEdit={editVoiceText} />
       <form
-        className="chat-compose"
+        className={'chat-compose' + (voice.listening ? ' listening' : '')}
         onSubmit={(e) => {
           e.preventDefault();
-          send(input);
+          if (voice.listening) voice.stop({ now: true });
+          else if (voice.pending) voice.confirm();
+          else send(input);
         }}
       >
         <label className="sr-only" htmlFor={'chat-' + key}>
@@ -257,21 +304,32 @@ export default function CrewAssistant({
         </label>
         <input
           id={'chat-' + key}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
+          ref={field}
+          value={voice.listening ? voice.transcript : voice.pending || input}
+          onChange={(e) => {
+            if (voice.pending) voice.discard(); // typing turns the spoken text into a typed draft
+            setInput(e.target.value);
+          }}
           onFocus={() => onStatus?.('listening')}
-          onBlur={() => onStatus?.('idle')}
+          onBlur={() => !voice.listening && onStatus?.('idle')}
           maxLength={1500}
+          readOnly={voice.listening}
           placeholder={
-            alert
-              ? 'Describe what you observe…'
-              : person.general
-                ? 'Ask how SOMA works…'
-                : 'Ask about trends, check-ins or why something is tracked…'
+            voice.listening
+              ? 'Listening… speak now'
+              : alert
+                ? 'Describe what you observe…'
+                : person.general
+                  ? 'Ask how SOMA works…'
+                  : 'Ask about trends, check-ins or why something is tracked…'
           }
           disabled={busy}
         />
-        <button aria-label="Send message" disabled={busy || !input.trim()}>
+        <MicButton voice={{ ...voice, toggle: toggleVoice }} disabled={busy} />
+        <button
+          aria-label="Send message"
+          disabled={busy || (!voice.listening && !voice.pending && !input.trim())}
+        >
           <Send size={17} />
         </button>
       </form>
