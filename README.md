@@ -4,7 +4,7 @@
 
 <h1 align="center">SOMA · Astronaut Health Monitor</h1>
 
-SOMA is a **web application** (it runs in the browser, with nothing to install) for health monitoring and decision support on long-duration space missions. Built for the NASA Space Apps Challenge 2026 challenge **Create Health Monitoring Software for Astronauts on Space Missions**. Made by team **Astro Coders 2026**: Raquel Cámara, Pablo Dueñas, Emilliano Recuenco and José Miguel Vergara.
+SOMA is a **web application** (it runs in the browser, with nothing to install) for health monitoring and decision support on long-duration space missions. Built for the NASA Space Apps Challenge 2026 challenge **Create Health Monitoring Software for Astronauts on Space Missions**. Made by team **Astro Coders 2026**: Raquel Cámara, Pablo Dueñas, Emilliano Recuenco and José Miguel Quílez.
 
 <p align="center">
   <img src="https://img.shields.io/badge/React-19.3.1-61DAFB?logo=react&logoColor=white" alt="React 19.3.1" />
