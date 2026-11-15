@@ -12,6 +12,7 @@ Source of truth for request/response shapes. The backend validates these shapes 
   - **public with optional auth (MOD-01):** `/assistant/chat`. The token is optional; if present it must be valid (else 401 `UNAUTHENTICATED`) and it unlocks that astronaut's own private data.
   - **private:** everything else; the token's astronaut must match `astronaut_id` / `:id` → else 403 `FORBIDDEN`. No/invalid token → 401 `UNAUTHENTICATED`.
   - **commander:** `/crew/alerts` (role `commander`, else 403).
+  - **(MOD-05) commander reads any astronaut:** `GET /astronauts/:id/status|history|checkins|routine` also accept a commander token for any `:id`. Writes (`POST /measurements`, `POST /checkins`, `PATCH .../routine/...`) stay self-only. In `/assistant/chat`, a commander session (role read from the database) is also offered `get_crew_member_health_summary` and `get_crew_member_indicator_history` (`astronaut_id` argument) and may be told any crew member's private data.
 - Emergency endpoints are public on purpose and rate-limited. A 4-digit PIN is not real security (see spec "Access, privacy and roles").
 
 ## Indicators and valid ranges (HM-01)

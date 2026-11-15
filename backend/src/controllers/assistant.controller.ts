@@ -50,9 +50,10 @@ export async function assistantChatController(req: AuthRequest, res: Response, n
     if (!body) return;
     let session = null;
     if (req.astronaut) {
-      const astronaut = await prisma.astronaut.findUnique({ where: { id: req.astronaut.id }, select: { id: true, name: true } });
+      // The role is read from the database (not trusted from the token): it decides commander access (MOD-05).
+      const astronaut = await prisma.astronaut.findUnique({ where: { id: req.astronaut.id }, select: { id: true, name: true, role: true } });
       if (!astronaut) return sendError(res, 401, 'UNAUTHENTICATED', 'The astronaut in the token no longer exists.');
-      session = { astronautId: astronaut.id, name: astronaut.name };
+      session = { astronautId: astronaut.id, name: astronaut.name, role: astronaut.role };
     }
     res.json(await runAssistant(body.message, session, body.emergency));
   } catch (e) {

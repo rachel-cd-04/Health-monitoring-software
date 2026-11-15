@@ -52,6 +52,12 @@ export function requireSelf(req: AuthRequest, res: Response, next: NextFunction)
   next();
 }
 
+/** MOD-05: read access to an astronaut's private data for that astronaut or the commander. Writes stay requireSelf. */
+export function requireSelfOrCommander(req: AuthRequest, res: Response, next: NextFunction) {
+  if (req.astronaut?.role === 'commander') return next();
+  return requireSelf(req, res, next);
+}
+
 export function requireCommander(req: AuthRequest, res: Response, next: NextFunction) {
   if (req.astronaut?.role !== 'commander') {
     return sendError(res, 403, 'FORBIDDEN', 'Commander access is required.');
