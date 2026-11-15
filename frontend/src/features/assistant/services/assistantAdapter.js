@@ -9,7 +9,7 @@
 // Response {answer:string, sources:[{title,url}|riskId], caution?:string, dataUsed?:string[], ruleIds?:string[], action?:'station'|'emergency'}
 // Any network/validation failure falls back to the scripted engine and is labelled as such.
 // Emergency threads never use this adapter: they stay on the deterministic guide (emergencyReply).
-import { routineReply } from '../models/assistantLogic.js';
+import { routineReply, offlineEmergencyReply } from '../models/assistantLogic.js';
 import { evaluateSignals } from '../../alerts/models/rules.js';
 import { risks } from '../../health/models/risks.js';
 import { latest, metrics, metricOrder, valueLabel } from '../../crew/models/crewModel.js';
@@ -279,6 +279,84 @@ export async function askAssistant({
       ...scriptedReply(message, person, data, now),
       engine: 'scripted',
       fallback: true,
+      fallbackReason: String(error.message || error),
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+const clip = (value, max) => String(value ?? '').trim().slice(0, max);
+
+/** Bound the emergency context to the backend's limits (MOD-04) so a long label never causes a 400. */
+function emergencyPayload(context, history) {
+  const step = context.step && {
+    kind: context.step.kind,
+    title: clip(context.step.title, 200),
+    ...(context.step.items?.length
+      ? { items: context.step.items.slice(0, 8).map((item) => clip(item, 300)) }
+      : {}),
+  };
+  const assessment = Object.fromEntries(
+    ['responsive', 'breathing', 'onset']
+      .filter((k) => context.assessment?.[k])
+      .map((k) => [k, clip(context.assessment[k], k === 'onset' ? 60 : 40)]),
+  );
+  return {
+    situation: clip(context.situation || 'Emergency', 120),
+    ...(context.scenario ? { scenario: clip(context.scenario, 80) } : {}),
+    ...(step ? { step } : {}),
+    ...(Object.keys(assessment).length ? { assessment } : {}),
+    ...(context.vitals?.length
+      ? {
+          vitals: context.vitals.slice(-12).map((v) => ({
+            label: clip(v.label, 60),
+            value: Number(v.value),
+            unit: clip(v.unit, 20),
+          })),
+        }
+      : {}),
+    ...(Number.isFinite(context.minutesElapsed)
+      ? { minutes_elapsed: Math.max(0, Math.floor(context.minutesElapsed)) }
+      : {}),
+    ...(history?.length
+      ? {
+          history: history
+            .filter((m) => m.text?.trim() && (m.role === 'user' || m.role === 'assistant'))
+            .slice(-6)
+            .map((m) => ({ role: m.role, text: clip(m.text, 1500) })),
+        }
+      : {}),
+  };
+}
+
+/**
+ * Emergency chat (MOD-04): sends the question plus what the guide is showing. Never throws; if the
+ * service is missing or fails, it answers offline from the current step so the guide keeps working.
+ */
+export async function askEmergencyAssistant({ message, context, history = [], timeoutMs = 45000 }) {
+  if (!apiConfigured) return { ...offlineEmergencyReply(message, context), engine: 'offline' };
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const body = await api('/api/assistant/chat', {
+      method: 'POST',
+      body: { message, emergency: emergencyPayload(context, history) },
+      signal: ctrl.signal,
+    });
+    if (typeof body?.answer !== 'string' || !body.answer.trim())
+      throw new Error('Invalid response shape');
+    return {
+      text: body.answer,
+      sources: body.sources || [],
+      caution: body.caution || null,
+      engine: 'service',
+    };
+  } catch (error) {
+    return {
+      ...offlineEmergencyReply(message, context),
+      engine: 'offline',
+      unavailable: true,
       fallbackReason: String(error.message || error),
     };
   } finally {

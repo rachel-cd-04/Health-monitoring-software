@@ -112,6 +112,7 @@ Body: `{ message }` (1–2000 chars). There is no `astronaut_id`: the session as
 - `scope: "private"` (valid token): the same plus the token astronaut's own private data. Other astronauts stay at public scope.
 - `data_used` lists the tools that were run successfully.
 - (MOD-03) The loop waits ≥ 1 s between LLM requests, so a question that uses tools takes a few seconds; clients should show a "thinking" state and use a generous timeout (≥ 60 s).
+- (MOD-04) Optional `emergency` object in the body: `{ situation, scenario?, step?: { kind, title, items? }, assessment?: { responsive?, breathing?, onset? }, vitals?: [{ label, value, unit }], minutes_elapsed?, history?: [{ role, text }] (≤ 6) }`. It carries what the emergency guide is showing (no private stored data) and switches the assistant to short answers bound to the current step (max 1 tool round, no "press the Emergency button" note). The emergency guide itself never depends on it: if the call fails, the UI shows an offline answer built from the current step.
 - Errors: 401 `UNAUTHENTICATED` (invalid/expired token), 429 (rate limit, 20 requests/min), 503 `AI_UNAVAILABLE` (no ~~`MISTRAL_API_KEY`~~ `LLM_API_KEY` (MOD-02), or the provider is unreachable after 2 automatic retries).
 
 ## Alert shape

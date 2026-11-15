@@ -297,6 +297,13 @@ export function useAppController() {
       ...d,
       chatThreads: { ...d.chatThreads, [key]: [...(d.chatThreads[key] || []), message] },
     }));
+  const clearChat = (key) =>
+    setData((d) => {
+      if (!d.chatThreads[key]) return d;
+      const chatThreads = { ...d.chatThreads };
+      delete chatThreads[key];
+      return { ...d, chatThreads };
+    });
   const { broadcast, acknowledge, patchIncident, updateAssessment, resolve, emergencyReport } =
     useEmergencyController({
       apiConfigured,
@@ -389,6 +396,7 @@ export function useAppController() {
     updateAssessment,
     view,
     appendChat,
+    clearChat,
     notif,
     snoozeReminder,
   };

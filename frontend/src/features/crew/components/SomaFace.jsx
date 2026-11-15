@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 
 // SOMA's assistant face: an original design (a glowing visor orb), not a third-party character.
 // Moods: idle · listening · thinking · happy · concerned. Blinks, and its gaze follows the pointer.
@@ -9,6 +9,9 @@ const reduced = () =>
     document.documentElement.classList.contains('a11y-reduce-motion'));
 
 export default function SomaFace({ mood = 'idle', size = 64, follow = true, title }) {
+  // Unique gradient/filter ids per instance: with fixed ids, a face inside a hidden panel
+  // (display: none) would "own" the gradient and every other face would render blank.
+  const uid = 'sf' + useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const ref = useRef(),
     [look, setLook] = useState({ x: 0, y: 0 }),
     [blink, setBlink] = useState(false);
@@ -63,16 +66,16 @@ export default function SomaFace({ mood = 'idle', size = 64, follow = true, titl
       aria-label={title || `SOMA assistant, ${mood}`}
     >
       <defs>
-        <radialGradient id="sf-orb" cx="35%" cy="28%" r="80%">
+        <radialGradient id={uid + '-orb'} cx="35%" cy="28%" r="80%">
           <stop offset="0" stopColor="#3fc4c9" />
           <stop offset=".55" stopColor="#0b7a84" />
           <stop offset="1" stopColor="#063f46" />
         </radialGradient>
-        <radialGradient id="sf-visor" cx="50%" cy="40%" r="70%">
+        <radialGradient id={uid + '-visor'} cx="50%" cy="40%" r="70%">
           <stop offset="0" stopColor="#0c2e35" />
           <stop offset="1" stopColor="#051a1f" />
         </radialGradient>
-        <filter id="sf-glow" x="-50%" y="-50%" width="200%" height="200%">
+        <filter id={uid + '-glow'} x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation="2.2" result="b" />
           <feMerge>
             <feMergeNode in="b" />
@@ -80,13 +83,13 @@ export default function SomaFace({ mood = 'idle', size = 64, follow = true, titl
           </feMerge>
         </filter>
       </defs>
-      <circle cx="50" cy="50" r="48" fill="url(#sf-orb)" />
+      <circle cx="50" cy="50" r="48" fill={`url(#${uid}-orb)`} />
       <ellipse cx="38" cy="22" rx="20" ry="9" fill="#fff" opacity=".22" />
-      <rect x="17" y="30" width="66" height="44" rx="22" fill="url(#sf-visor)" />
+      <rect x="17" y="30" width="66" height="44" rx="22" fill={`url(#${uid}-visor)`} />
       <g
         className="sf-face"
         style={{ transform: `translate(${gaze.x}px, ${gaze.y}px)` }}
-        filter="url(#sf-glow)"
+        filter={`url(#${uid}-glow)`}
       >
         {mood === 'happy' ? (
           <g
